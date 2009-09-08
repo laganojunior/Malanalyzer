@@ -9,6 +9,18 @@ from CleanText import replaceUnicode, unescapeHtml
 import WebGrab
 import sys
 
+usageStmt = """
+Adds a users rating list to the database
+
+Usage: AddUserRatings username [dbFilename]
+If dbFilename is not provided then Mal.db is used
+"""
+
+if len(sys.argv) == 1:
+	print("Error: Expected at least 1 argument")
+	print(usageStmt)
+	exit(1)
+	
 username = sys.argv[1]
 
 if len(sys.argv) == 2:
