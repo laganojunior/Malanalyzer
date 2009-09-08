@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+#
+# This script continually extracts ratings for random users
+# until it breaks.
+#
+# Usage:
+# ExtractUserRatingsLoop delay
+#
+# delay is the time in seconds between users.
+
+if [ -z "$1" ]; then
+  echo -e "This script continually extracts ratings for random users until it breaks"
+  echo -e "\nUsage: ExtractUserRatingsLoop delay\n\ndelay is the time in seconds between users."
+  exit 1
+fi
+
+while true; 
+do
+	GetRandomUser | AddUserRatings -
+	sleep $1
+done
