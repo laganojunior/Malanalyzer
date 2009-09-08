@@ -40,6 +40,8 @@ db = MalDB(filename)
 animelist = WebGrab.getAnimeList(username)
 userid = WebGrab.getUserId(username)
 
+print ("Adding ratings for user", username, "id:", userid)
+
 db.addUser(username, userid)
 db.addAnimeList(userid, animelist)
 db.saveChanges()
