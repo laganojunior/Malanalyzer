@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+# This script initializes a sqlite3 database file that conforms to the schema
+# the application requires
+#
+# Usage:
+# InitDb [filename] 
+# 
+# If filename is specified, then that file is used as the database file. 
+# Otherwise, the filename "Mal.db" is used
+
+import sqlite3
+import sys
+
+if len(sys.argv) == 1:
+    filename = "Mal.db"
+else:
+    filename = sys.argv[1]
+
+conn = sqlite3.connect(filename)
+c = conn.cursor()
+
+c.execute("create table userIds(id integer primary key, name text)")
+c.execute("create table animeIds(id integer primary key, name text)")
+c.execute("create table ratings(userId integer, animeId integer, rating integer, unique(userId, animeId))")
+
+c.close()
+conn.commit()
