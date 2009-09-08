@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+# Adds a users rating list to the database
+#
+# Usage: AddUserRatings username [dbFilename]
+# If dbFilename is not provided then Mal.db is used
+
+from MalDB import MalDB
+from CleanText import replaceUnicode, unescapeHtml
+import WebGrab
+import sys
+
+username = sys.argv[1]
+
+if len(sys.argv) == 2:
+    filename = "Mal.db"
+else:
+    filename = sys.argv[2]
+   
+db = MalDB(filename)
+   
+animelist = WebGrab.getAnimeList(username)
+userid = WebGrab.getUserId(username)
+
+db.addUser(username, userid)
+db.addAnimeList(userid, animelist)
+db.saveChanges()
+
+
