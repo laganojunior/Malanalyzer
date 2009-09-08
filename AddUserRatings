@@ -2,6 +2,8 @@
 # Adds a users rating list to the database
 #
 # Usage: AddUserRatings username [dbFilename]
+# If - is provided as a username, then the username will be read
+# from standard input.
 # If dbFilename is not provided then Mal.db is used
 
 from MalDB import MalDB
@@ -13,6 +15,8 @@ usageStmt = """
 Adds a users rating list to the database
 
 Usage: AddUserRatings username [dbFilename]
+If - is provided as a username, then the username will be read
+from standard input.
 If dbFilename is not provided then Mal.db is used
 """
 
@@ -21,7 +25,10 @@ if len(sys.argv) == 1:
 	print(usageStmt)
 	exit(1)
 	
-username = sys.argv[1]
+if sys.argv[1] == "-":
+	username = sys.stdin.read()
+else:
+	username = sys.argv[1]
 
 if len(sys.argv) == 2:
     filename = "Mal.db"
