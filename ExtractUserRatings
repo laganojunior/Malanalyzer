@@ -43,5 +43,5 @@ while True:
             db.saveChanges()
         
             time.sleep(delay)
-    except Exception, e:
-        print "Caught exception", e >> sys.stderr
+    except Exception as e:
+        print >> sys.stderr, "Caught exception", e
