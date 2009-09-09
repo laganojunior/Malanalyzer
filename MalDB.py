@@ -112,6 +112,22 @@ class MalDB:
             ratingMap[row[0]] = row[1]
             
         return ratingMap
+        
+    def getRatingsMatrix(self):
+        """
+        Returns a dictionary mapping tuples of pairs of a user and anime to the
+        respective rating
+        """
+        
+        c = self.conn.cursor()
+        c.execute("select userId, animeId, rating from ratings where rating <> 0")
+        
+        ratingMap = {}
+        
+        for row in c:
+            ratingMap[(row[0],row[1])] = row[2]
+            
+        return ratingMap
             
         
             
