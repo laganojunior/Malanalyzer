@@ -34,6 +34,28 @@ class MalDB:
         
         return row[0]
         
+    def getUserName(self, userId):
+        c = self.conn.cursor()
+        
+        c.execute("select name from userIds where id=?", (userId,))
+        row = c.fetchone()
+        
+        if row is None:
+            raise MalDBException("No username for id %s" % (userId))
+            
+        return row[0]
+        
+    def getAnimeName(self, animeId):
+        c = self.conn.cursor()
+        
+        c.execute("select name from animeIds where id=?", (animeId,))
+        row = c.fetchone()
+        
+        if row is None:
+            raise MalDBException("No anime name for id %s" % (animeId))
+            
+        return row[0]
+        
     def addAnimeRating(self, userId, animeId, rating):
         self.conn.cursor().execute("insert or replace into ratings('userId','animeId','rating') values(?,?,?)", (userId, animeId, rating))
         
@@ -54,6 +76,42 @@ class MalDB:
             
             # Add an entry for the user's rating
             self.addAnimeRating(userid, id, anime["score"])
+            
+    def getAnimeRatingsForUser(self, userId):
+        """
+        Returns a dictionary mapping animeIds to ratings for a particular user
+        
+        Arguments:
+        userId - the id of the user to getting anime ratings for
+        """
+        
+        c = self.conn.cursor()
+        c.execute("select animeId, rating from ratings where userId=? and rating <> 0", (userId,))
+        
+        ratingMap = {}
+        
+        for row in c:
+            ratingMap[row[0]] = row[1]
+            
+        return ratingMap
+        
+    def getUserRatingsForAnime(self, animeId):
+        """
+        Returns a dictionary mapping userIds to ratings for a particular anime
+        
+        Arguments:
+        animeId - the id of the anime to getting user ratings for
+        """
+        
+        c = self.conn.cursor()
+        c.execute("select userId, rating from ratings where animeId=? and rating <> 0", (animeId,))
+        
+        ratingMap = {}
+        
+        for row in c:
+            ratingMap[row[0]] = row[1]
+            
+        return ratingMap
             
         
             
