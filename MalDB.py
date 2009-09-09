@@ -34,6 +34,20 @@ class MalDB:
         
         return row[0]
         
+    def getAllUserIds(self):
+        c = self.conn.cursor()
+        
+        c.execute("select distinct id from userIds")
+        
+        return [row[0] for row in c]
+        
+    def getAllAnimeIds(self):
+        c = self.conn.cursor()
+        
+        c.execute("select distinct id from animeIds")
+        
+        return [row[0] for row in c]
+        
     def getUserName(self, userId):
         c = self.conn.cursor()
         
