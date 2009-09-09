@@ -36,4 +36,20 @@ def getRandomUsername():
         raise Exception("No regular expression match")
         
     return match.group(1)
+    
+def getRecentOnlineUsernames():
+    url = "http://myanimelist.net/users.php"
+    f = urllib.request.urlopen(url)
+    
+    # Extract all matches of a profile url
+    usernameRegex = r'<a href="http://myanimelist.net/profile/([\S]+)">[\S]+</a>'
+    
+    match = re.findall(usernameRegex, f.read().decode())
+    
+    if match is None:
+        return []
+        
+    return match
+        
+    
        

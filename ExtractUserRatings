@@ -31,11 +31,14 @@ else:
 db = MalDB(dbFilename)
 
 while True:
-    username = WebGrab.getRandomUsername()
+    usernameList = WebGrab.getRecentOnlineUsernames()
     
-    print("Adding data for", username)
+    for username in usernameList:
+        username = WebGrab.getRandomUsername()
     
-    DataAdd.addUserData(username,db)
-    db.saveChanges()
+        print("Adding data for", username)
     
-    time.sleep(delay)
+        DataAdd.addUserData(username,db)
+        db.saveChanges()
+    
+        time.sleep(delay)
