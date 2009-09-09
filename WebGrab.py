@@ -22,4 +22,18 @@ def getUserId(username):
         raise Exception("No RegEx match in getUserId for %s" % username)
         
     return m.group(1)
+    
+def getRandomUsername():
+    # Use the url for getting a random list
+    url = "http://myanimelist.net/users.php?lucky=1"
+    f = urllib.request.urlopen(url)
+
+    # Extract the username from the title
+    usernameRegex = r"<title>([\S]+)'s Anime List - MyAnimeList.net</title>"
+    match = re.search(usernameRegex, f.read().decode())
+
+    if match is None:
+        raise Exception("No regular expression match")
+        
+    return match.group(1)
        

@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+usageStmt = """
+This script continually extracts ratings for random users until it breaks.
+
+Usage:
+ExtractUserRatings delay [dbFilename]
+
+delay is the time in seconds between users.
+dbfile is the filename for the database file. If not provided, then Mal.DB is
+used.
+"""
+
+import WebGrab
+import DataAdd
+from MalDB import MalDB
+import sys
+import time
+
+if len(sys.argv) == 1:
+	print("Error: Expected at least 1 argument")
+	print(usageStmt)
+	exit(1)
+    
+delay = float(sys.argv[1])
+    
+if len(sys.argv) == 3:
+    dbFilename = sys.argv[2]
+else:
+    dbFilename = "Mal.DB"
+
+db = MalDB(dbFilename)
+
+while True:
+    username = WebGrab.getRandomUsername()
+    
+    print("Adding data for", username)
+    
+    DataAdd.addUserData(username,db)
+    db.saveChanges()
+    
+    time.sleep(delay)
