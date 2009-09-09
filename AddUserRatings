@@ -16,8 +16,8 @@ import DataAdd
 
 
 if len(sys.argv) == 1:
-    print("Error: Expected at least 1 argument")
-    print(usageStmt)
+    print "Error: Expected at least 1 argument"
+    print usageStmt
     exit(1)
 	
 if sys.argv[1] == "-":

@@ -17,8 +17,8 @@ import sys
 import time
 
 if len(sys.argv) == 1:
-	print("Error: Expected at least 1 argument")
-	print(usageStmt)
+	print "Error: Expected at least 1 argument"
+	print usageStmt
 	exit(1)
     
 delay = float(sys.argv[1])
@@ -36,7 +36,7 @@ while True:
     for username in usernameList:
         username = WebGrab.getRandomUsername()
     
-        print("Adding data for", username)
+        print "Adding data for", username
     
         DataAdd.addUserData(username,db)
         db.saveChanges()
