@@ -10,24 +10,52 @@ class FactorModel:
     described by the dot product of the vectors. The predicted value between
     an element i in u and an element j in v is:
     
-    vector_i dot vector_j.
+    vector_i dot vector_j + globalBias + uBias_i + vBias_j.
+    
+    where the biases are provided constants that vary on the elements i or j.
     
     The vectors are assigned to minimize the errors of the model on known
-    interactions between some elements in u and v
+    interactions between some elements in u and v.
     """
     
-    def __init__(self, uIds, vIds, numFactors):
+    def __init__(self, uIds, vIds, numFactors, globalBias = 0, uBias = None,
+                 vBias = None):
         """
         Initialize the linear factor model. This only sets a random model.
         
         uIds       - a list of ids for the u set
         vIds       - a list of ids for the v set
         numFactors - the number of linear factors to assume.
+        globalBias - the value to add to all predicted values
+        uBias      - a dictionary mapping elements of u to an intrinsic bias
+        vBias      - a dictionary mapping elements of v to an intrinsic bias
         """
         
         self.uIds = uIds[:]
         self.vIds = vIds[:]
         self.numFactors = numFactors
+        self.globalBias = globalBias
+        
+        if uBias != None:
+            self.uBias = uBias.copy()
+        else:
+            self.uBias = {}
+            
+        # Fill in missing entries as 0
+        for u in self.uIds:
+            if u not in self.uBias:
+                self.uBias[u] = 0
+        
+        if vBias != None:
+            self.vBias = vBias.copy()
+        else:
+            self.vBias = {}
+            
+        # Fill in missing entries as 0
+        for v in self.vIds:
+            if v not in self.vBias:
+                self.vBias[v] = 0
+                
         self.randomize()
         
     def randomize(self):
@@ -52,7 +80,7 @@ class FactorModel:
         calling initUseMatrix beforehand)
         """
         
-        return numpy.dot(self.uVecs[u], self.vVecs[v])
+        return numpy.dot(self.uVecs[u], self.vVecs[v]) + self.globalBias + self.uBias[u] + self.vBias[v]
             
     def calcError(self, knownValues):
         error = 0
@@ -108,7 +136,7 @@ class FactorModel:
                     continue
                     
                 x = numpy.array([self.vVecs[v] for v in uToV[u]])
-                y = numpy.array([knownValues[(u,v)] for v in uToV[u]])
+                y = numpy.array([knownValues[(u,v)] - self.globalBias - self.uBias[u] - self.vBias[v] for v in uToV[u]])
                 
                 self.uVecs[u] = lstsq(x,y)[0]
                 
@@ -118,7 +146,7 @@ class FactorModel:
                     continue
                     
                 x = numpy.array([self.uVecs[u] for u in vToU[v]])
-                y = numpy.array([knownValues[(u,v)] for u in vToU[v]])
+                y = numpy.array([knownValues[(u,v)] - self.globalBias - self.uBias[u] - self.vBias[v] for u in vToU[v]])
                 
                 self.vVecs[v] = lstsq(x,y)[0]
                 
