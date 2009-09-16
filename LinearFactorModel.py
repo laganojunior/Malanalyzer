@@ -3,13 +3,28 @@ from numpy.linalg import lstsq
 import numpy
 
 class FactorModel:
+    """
+    This class is a linear factor model that attempts to describe the 
+    interaction between two sets of items labeled u and v. Internally, a
+    vector is assigned to each element in u and v and their interaction is
+    described by the dot product of the vectors. The predicted value between
+    an element i in u and an element j in v is:
+    
+    vector_i dot vector_j.
+    
+    The vectors are assigned to minimize the errors of the model on known
+    interactions between some elements in u and v
+    """
     
     def __init__(self, uIds, vIds, numFactors):
         """
-        Initialize the linear factor model. The two sets are identified by
-        the two lists uIds and vIds and the number of factors is set by
-        numFactors
+        Initialize the linear factor model. This only sets a random model.
+        
+        uIds       - a list of ids for the u set
+        vIds       - a list of ids for the v set
+        numFactors - the number of linear factors to assume.
         """
+        
         self.uIds = uIds[:]
         self.vIds = vIds[:]
         self.numFactors = numFactors
@@ -49,9 +64,7 @@ class FactorModel:
         
     def initModel(self, knownValues, stopThreshold = .01, verbose = False):
         """
-        Assigns vectors a, b to each element i, j in u and v such that the error
-        sum((actual - predicted) ^ 2) over known values is minimized. The predicted
-        value for i and j is just the dot product a * b.
+        Assigns vectors to minimize the error from known values.
         
         Arguments:
         knownValues - a dictionary mapping tuples (i,j), where i is in u and
