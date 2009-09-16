@@ -47,7 +47,7 @@ class FactorModel:
             
         return error
         
-    def initUseMatrix(self, knownValues, stopThreshold = .01, verbose = False):
+    def initModel(self, knownValues, stopThreshold = .01, verbose = False):
         """
         Assigns vectors a, b to each element i, j in u and v such that the error
         sum((actual - predicted) ^ 2) over known values is minimized. The predicted
