@@ -1,0 +1,154 @@
+#!/usr/bin/env python
+usageStmt = """
+Minimizes a model to fit the database and outputs recommendations for a 
+particular user
+
+Usage: RecommendAnime  [-v] [--ratings-threshold threshold] 
+       [--db filename] [--print-stats]
+       username filename threshold number factors
+
+username  : the username to print recommendations for       
+threshold : the minimum threshold change of the error for model minimization to continue
+number    : the number of anime to recommend per run
+factors   : the number of linear factors in the model
+       
+If -v is defined, then the model minimization is verbose, and the error value
+is printed every least squares pass to standard output (not to the results file)
+
+If --ratings-threshold is defined, then only anime with at least that number of 
+raters are considered. Otherwise, all anime are considered.
+
+If --db is provided, then the filename provided is used as the database. Otherwise,
+Mal.db is used as the database.
+
+If --print-stats is defined, then extra statistics for recommended anime is 
+provided.
+"""
+
+from MalDB import MalDB
+from LinearFactorModel import FactorModel
+import numpy
+import codecs
+import operator
+from math import sqrt
+import sys
+import getopt
+
+def average(list):
+    return reduce(operator.add, list) / len(list)
+    
+def stddev(list):
+    meanSquare = average(list)
+    meanSquare *= meanSquare
+    
+    return sqrt(average([x * x for x in list]) - meanSquare)
+
+def getRestrictedList(db, threshold):
+    return [animeId for animeId in db.getAllAnimeIds() if len(db.getUserRatingsForAnime(animeId)) >= threshold]
+    
+def restrictRatingsMatrix(ratingsMatrix, animeIds):
+    for (u,v) in ratingsMatrix.keys():
+        if v not in animeIds:
+            del ratingsMatrix[(u,v)]
+            
+
+# Process arguments
+try:
+    argList, restOfArgs = getopt.getopt(sys.argv[1:],"v",
+                          ["ratings-threshold=", "db=", "clear-results","print-stats"])
+                          
+except getopt.GetoptError, e:
+    print e
+    print usageStmt
+    exit(1)
+
+dbFilename = "Mal.db"
+ratingsThreshold = 0
+verbose = False
+printStats = False
+
+for (arg, value) in argList:
+    if arg == "-v":
+        verbose = True
+    elif arg == "--ratings-threshold":
+        ratingsThreshold = int(value)
+    elif arg == "--db":
+        dbFilename = value
+    elif arg =="--print-stats":
+        printStats = True
+
+if len(restOfArgs) != 4:
+    print "4 non-optional arguments needed"
+    print usageStmt
+    exit(1)
+    
+username = restOfArgs[0]    
+minimizeThreshold = int(restOfArgs[1])
+number = int(restOfArgs[2])
+factors = int(restOfArgs[3])
+
+# Open up the database and obtain the full ratings matrix 
+db = MalDB(dbFilename)
+ratingsMatrix = db.getRatingsMatrix()
+
+# Get the id for the username
+myId = db.getUserId(username)   
+
+# If needed, restrict the list of ids and get the corresponding restricted
+# ratings matrix
+if ratingsThreshold > 0:
+    animeIds = getRestrictedList(db, ratingsThreshold)
+    restrictRatingsMatrix(ratingsMatrix, animeIds)
+    print "Restricted to", len(animeIds)
+else:
+    animeIds = db.getAllAnimeIds()
+    
+userIds = db.getAllUserIds()
+
+# Minimize a model to fit the data
+model = FactorModel(userIds, animeIds, factors)
+model.randomize()
+score = model.initModel(ratingsMatrix, stopThreshold=minimizeThreshold, verbose=verbose)
+      
+
+# Get the predicted ratings for this user for all anime that the user does not have on her list
+goodness = [(animeId, model.predict(myId, animeId)) for animeId in animeIds if (myId,animeId) not in ratingsMatrix]
+
+# Sort by the predicted value
+goodness.sort(key = lambda vTuple: vTuple[1], reverse = True)
+
+if printStats:
+    print "Title | Predicted Rating | # of raters | average rating | rating std. dev."
+
+i = 0
+for animeId, value in goodness:
+    # Prevent recommending anime no one has rated, as the factors for these are arbitrary
+    userRatingsMap = db.getUserRatingsForAnime(animeId)
+    if len(userRatingsMap) == 0:
+        continue
+        
+    # Accumulate statistics if need
+    if printStats:
+        userRatings = [float(userRatingsMap[user]) for user in userRatingsMap.keys()]
+        averageRating = average(userRatings)
+        deviation = stddev(userRatings)
+        numberOfRaters = len(userRatings)
+        
+    name = db.getAnimeName(animeId)
+    
+    # Print to stdout and file
+    if printStats:
+        print name , "|", value, "|", numberOfRaters, "|", averageRating, "|", deviation
+    else:
+        print name
+    
+    i+=1
+    if i >= number:
+        break
+
+print        
+    
+    
+
+
+
