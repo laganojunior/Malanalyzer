@@ -83,7 +83,7 @@ if len(restOfArgs) != 4:
     exit(1)
     
 username = restOfArgs[0]    
-minimizeThreshold = int(restOfArgs[1])
+minimizeThreshold = float(restOfArgs[1])
 number = int(restOfArgs[2])
 factors = int(restOfArgs[3])
 
