@@ -19,7 +19,7 @@ class MalDB:
         row = c.fetchone()
         
         if row is None:
-            raise MalDBException("No id for username %s" % (username))
+            raise Exception("No id for username %s" % (username))
             
         return row[0]
         
@@ -55,7 +55,7 @@ class MalDB:
         row = c.fetchone()
         
         if row is None:
-            raise MalDBException("No username for id %s" % (userId))
+            raise Exception("No username for id %s" % (userId))
             
         return row[0]
         
@@ -66,7 +66,7 @@ class MalDB:
         row = c.fetchone()
         
         if row is None:
-            raise MalDBException("No anime name for id %s" % (animeId))
+            raise Exception("No anime name for id %s" % (animeId))
             
         return row[0]
         
