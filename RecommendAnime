@@ -51,6 +51,37 @@ def restrictRatingsMatrix(ratingsMatrix, animeIds):
         if v not in animeIds:
             del ratingsMatrix[(u,v)]
             
+def getGlobalAverages(ratingsMatrix):
+    return average([float(ratingsMatrix[(u,v)]) for (u,v) in ratingsMatrix.keys()])
+    
+def getAnimeAverages(db, animeIds):
+    animeAverages = {}
+    for anime in animeIds:
+        ratingsMap =  db.getUserRatingsForAnime(anime)
+        
+        if len(ratingsMap) == 0:
+            animeAverages[anime] = 0
+        else:
+            animeAverages[anime] = average([float(ratingsMap[user]) for user in ratingsMap.keys()])
+
+    return animeAverages
+    
+def getUserAverages(db, userIds):
+    userAverages = {}
+    for user in userIds:
+        ratingsMap = db.getAnimeRatingsForUser(user)
+        
+        if len(ratingsMap) == 0:
+            userAverages[user] = 0
+        else:
+            userAverages[user] = average([float(ratingsMap[anime]) for anime in ratingsMap.keys()])
+    
+    return userAverages
+    
+def subtractFromMap(map, val):
+    for key in map.keys():
+        map[key] -= val
+            
 
 # Process arguments
 try:
@@ -105,8 +136,18 @@ else:
     
 userIds = db.getAllUserIds()
 
+globalAverageRating = getGlobalAverages(ratingsMatrix)
+
+animeBias    = getAnimeAverages(db, animeIds)
+subtractFromMap(animeBias, globalAverageRating)
+
+userBias     = getUserAverages(db, userIds)
+subtractFromMap(userBias, globalAverageRating)
+
+
 # Minimize a model to fit the data
-model = FactorModel(userIds, animeIds, factors)
+model = FactorModel(userIds, animeIds, factors, globalBias = globalAverageRating,
+                    uBias = userBias, vBias = animeBias)
 model.randomize()
 score = model.initModel(ratingsMatrix, stopThreshold=minimizeThreshold, verbose=verbose)
       
