@@ -28,20 +28,8 @@ provided.
 from MalDB import MalDB
 from LinearFactorModel import FactorModel
 import numpy
-import codecs
-import operator
-from math import sqrt
 import sys
 import getopt
-
-def average(list):
-    return reduce(operator.add, list) / len(list)
-    
-def stddev(list):
-    meanSquare = average(list)
-    meanSquare *= meanSquare
-    
-    return sqrt(average([x * x for x in list]) - meanSquare)
 
 def getRestrictedList(db, threshold):
     return [animeId for animeId in db.getAllAnimeIds() if len(db.getUserRatingsForAnime(animeId)) >= threshold]
@@ -52,7 +40,7 @@ def restrictRatingsMatrix(ratingsMatrix, animeIds):
             del ratingsMatrix[(u,v)]
             
 def getGlobalAverages(ratingsMatrix):
-    return average([float(ratingsMatrix[(u,v)]) for (u,v) in ratingsMatrix.keys()])
+    return numpy.mean(ratingsMatrix.values())
     
 def getAnimeAverages(db, animeIds):
     animeAverages = {}
@@ -62,7 +50,7 @@ def getAnimeAverages(db, animeIds):
         if len(ratingsMap) == 0:
             animeAverages[anime] = 0
         else:
-            animeAverages[anime] = average([float(ratingsMap[user]) for user in ratingsMap.keys()])
+            animeAverages[anime] = numpy.mean(ratingsMap.values())
 
     return animeAverages
     
@@ -74,7 +62,7 @@ def getUserAverages(db, userIds):
         if len(ratingsMap) == 0:
             userAverages[user] = 0
         else:
-            userAverages[user] = average([float(ratingsMap[anime]) for anime in ratingsMap.keys()])
+            userAverages[user] = numpy.mean(ratingsMap.values())
     
     return userAverages
     
@@ -171,8 +159,8 @@ for animeId, value in goodness:
     # Accumulate statistics if need
     if printStats:
         userRatings = [float(userRatingsMap[user]) for user in userRatingsMap.keys()]
-        averageRating = average(userRatings)
-        deviation = stddev(userRatings)
+        averageRating = numpy.average(userRatings)
+        deviation = numpy.std(userRatings)
         numberOfRaters = len(userRatings)
         
     name = db.getAnimeName(animeId)
