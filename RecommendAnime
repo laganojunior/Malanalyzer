@@ -34,10 +34,8 @@ import getopt
 def restrictMinRaters(db, animeIds, threshold):
     return [animeId for animeId in animeIds if len(db.getUserRatingsForAnime(animeId)) >= threshold]
     
-def restrictRatingsMatrix(ratingsMatrix, animeIds):
-    for (u,v) in ratingsMatrix.keys():
-        if v not in animeIds:
-            del ratingsMatrix[(u,v)]
+def restrictRatingsMatrix(ratingsMatrix, userIds, animeIds):
+    return dict([item for item in ratingsMatrix.items() if (item[0][0] in userIds and item[0][1] in animeIds)])
             
 def getGlobalAverages(ratingsMatrix):
     return numpy.mean(ratingsMatrix.values())
@@ -121,7 +119,7 @@ userIds = db.getAllUserIds()
 if ratingsThreshold > 0:
     oldSize = len(animeIds)
     animeIds = restrictMinRaters(db, animeIds, ratingsThreshold)
-    restrictRatingsMatrix(ratingsMatrix, animeIds)
+    ratingsMatrix = restrictRatingsMatrix(ratingsMatrix, userIds, animeIds)
     if verbose:
         print "Using minimum raters of", ratingsThreshold, ", animes shrunk from", oldSize, "to", len(animeIds)
 
@@ -178,8 +176,3 @@ for animeId, value in goodness:
         break
 
 print        
-    
-    
-
-
-
