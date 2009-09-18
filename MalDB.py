@@ -1,5 +1,4 @@
 import sqlite3
-from CleanText import replaceUnicode, unescapeHtml
 
 class MalDB:
     
@@ -75,21 +74,6 @@ class MalDB:
         
     def saveChanges(self):
         self.conn.commit()
-        
-    def addAnimeList(self, userid, animelist):
-        # Go through each anime in the list
-        for anime in animelist:
-            # Clean up the anime's string to remove html escapes and unicode 
-            # characters
-            name = replaceUnicode(unescapeHtml(anime["title"]))
-            
-            # Add an id entry for the anime. Note that one is already provided
-            # in the list
-            id = anime["id"]
-            self.addAnime(name, id)
-            
-            # Add an entry for the user's rating
-            self.addAnimeRating(userid, id, anime["score"])
             
     def getAnimeRatingsForUser(self, userId):
         """
