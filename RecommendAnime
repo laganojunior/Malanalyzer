@@ -31,8 +31,8 @@ import numpy
 import sys
 import getopt
 
-def getRestrictedList(db, threshold):
-    return [animeId for animeId in db.getAllAnimeIds() if len(db.getUserRatingsForAnime(animeId)) >= threshold]
+def restrictMinRaters(db, animeIds, threshold):
+    return [animeId for animeId in animeIds if len(db.getUserRatingsForAnime(animeId)) >= threshold]
     
 def restrictRatingsMatrix(ratingsMatrix, animeIds):
     for (u,v) in ratingsMatrix.keys():
@@ -115,15 +115,17 @@ myId = db.getUserId(username)
 
 # If needed, restrict the list of ids and get the corresponding restricted
 # ratings matrix
-if ratingsThreshold > 0:
-    animeIds = getRestrictedList(db, ratingsThreshold)
-    restrictRatingsMatrix(ratingsMatrix, animeIds)
-    print "Restricted to", len(animeIds)
-else:
-    animeIds = db.getAllAnimeIds()
-    
+animeIds = db.getAllAnimeIds()
 userIds = db.getAllUserIds()
 
+if ratingsThreshold > 0:
+    oldSize = len(animeIds)
+    animeIds = restrictMinRaters(db, animeIds, ratingsThreshold)
+    restrictRatingsMatrix(ratingsMatrix, animeIds)
+    if verbose:
+        print "Using minimum raters of", ratingsThreshold, ", animes shrunk from", oldSize, "to", len(animeIds)
+
+    
 globalAverageRating = getGlobalAverages(ratingsMatrix)
 
 animeBias    = getAnimeAverages(db, animeIds)
