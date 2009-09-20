@@ -35,7 +35,6 @@ while True:
         usernameList = WebGrab.getRecentOnlineUsernames()
         
         for username in usernameList:
-            username = WebGrab.getRandomUsername()
         
             print "Adding data for", username
         
