@@ -25,7 +25,7 @@ If --print-stats is defined, then extra statistics for recommended anime is
 provided.
 """
 
-from MalDB import MalDB
+from MalDB import MemReader
 from LinearFactorModel import FactorModel
 import numpy
 import sys
@@ -105,7 +105,7 @@ number = int(restOfArgs[2])
 factors = int(restOfArgs[3])
 
 # Open up the database and obtain the full ratings matrix 
-db = MalDB(dbFilename)
+db = MemReader(dbFilename)
 ratingsMatrix = db.getRatingsMatrix()
 
 # Get the id for the username
