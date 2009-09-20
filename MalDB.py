@@ -120,7 +120,7 @@ class MalDB:
         
     def getRatingsMatrix(self):
         """
-        Returns a dictionary mapping tuples of pairs of a user and anime to the
+        Returns a multi-dimensional dictionary mapping a user and anime to the
         respective rating
         """
         
@@ -130,10 +130,16 @@ class MalDB:
         ratingMap = {}
         
         for row in c:
-            ratingMap[(row[0],row[1])] = row[2]
+            userId = row[0]
+            animeId = row[1]
+            rating = row[2]
             
-        return ratingMap
+            if userId not in ratingMap:
+                ratingMap[userId] = {}
 
+            ratingMap[userId][animeId] = rating
+
+        return ratingMap
 
 class MemReader:
     """
@@ -174,12 +180,9 @@ class MemReader:
         c.close()
 
         # Convert the ratings triples to the desired mappings
-        self.ratingsMatrix = {}
         self.userRatingMap = {}
         self.animeRatingMap = {}
         for (userId, animeId, rating) in ratingTriples:
-            self.ratingsMatrix[(userId, animeId)] = rating
-
             if userId not in self.userRatingMap:
                 self.userRatingMap[userId] = {}
 
@@ -221,7 +224,7 @@ class MemReader:
         return self.animeRatingMap[animeId]
         
     def getRatingsMatrix(self):
-        return self.ratingsMatrix
+        return self.userRatingMap
 
 
     

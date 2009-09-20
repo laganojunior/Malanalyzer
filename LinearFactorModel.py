@@ -85,9 +85,10 @@ class FactorModel:
             
     def calcError(self, knownValues):
         error = 0
-        for (u,v) in knownValues.keys():
-            dif = knownValues[(u,v)] - self.predict(u, v)
-            error += dif * dif
+        for u in knownValues.keys():
+            for v in knownValues[u].keys():
+                dif = knownValues[u][v] - self.predict(u, v)
+                error += dif * dif
             
         return error
         
@@ -96,11 +97,11 @@ class FactorModel:
         Assigns vectors to minimize the error from known values.
         
         Arguments:
-        knownValues - a dictionary mapping tuples (i,j), where i is in u and
-                      j is in v, to the known values of the model. Note that not
-                      all possible such tuples need to be provided.
-        stopThreshold - the amount the sum of errors must change for minimization to
-                        continue
+        knownValues - a multi-dimensional dictionary mapping i and j, where i is 
+                      in u and j is in v, to the known values of the model. Note
+                      that not all possible such values need to be provided.
+        stopThreshold - the amount the sum of errors must change for minimization
+                        to continue
         verbose  - if set to true, prints progress to standard output
                       
         Return Value:
@@ -123,10 +124,10 @@ class FactorModel:
         vToU = {}
         
         for u in self.uIds:
-            uToV[u] = [v for v in self.vIds if (u,v) in knownValues]
+            uToV[u] = [v for v in self.vIds if u in knownValues and v in knownValues[u]]
         
         for v in self.vIds:
-            vToU[v] = [u for u in self.uIds if (u,v) in knownValues]
+            vToU[v] = [u for u in self.uIds if u in knownValues and v in knownValues[u]]
            
         
         # Enter a loop that is only exited if the threshold is met
@@ -137,7 +138,7 @@ class FactorModel:
                     continue
                     
                 x = numpy.array([self.vVecs[v] for v in uToV[u]])
-                y = numpy.array([knownValues[(u,v)] - self.globalBias - self.uBias[u] - self.vBias[v] for v in uToV[u]])
+                y = numpy.array([knownValues[u][v] - self.globalBias - self.uBias[u] - self.vBias[v] for v in uToV[u]])
                 
                 self.uVecs[u] = lstsq(x,y)[0]
                 
@@ -147,7 +148,7 @@ class FactorModel:
                     continue
                     
                 x = numpy.array([self.uVecs[u] for u in vToU[v]])
-                y = numpy.array([knownValues[(u,v)] - self.globalBias - self.uBias[u] - self.vBias[v] for u in vToU[v]])
+                y = numpy.array([knownValues[u][v] - self.globalBias - self.uBias[u] - self.vBias[v] for u in vToU[v]])
                 
                 self.vVecs[v] = lstsq(x,y)[0]
                 

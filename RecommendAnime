@@ -35,10 +35,28 @@ def restrictMinRaters(db, animeIds, threshold):
     return [animeId for animeId in animeIds if len(db.getUserRatingsForAnime(animeId)) >= threshold]
     
 def restrictRatingsMatrix(ratingsMatrix, userIds, animeIds):
-    return dict([item for item in ratingsMatrix.items() if (item[0][0] in userIds and item[0][1] in animeIds)])
+    userSet = set(userIds)
+    animeSet = set(animeIds)
+
+    newMatrix = {}
+    for userId in ratingsMatrix.keys():
+        if userId in userSet:
+            newMatrix[userId] = {}
+
+            for animeId in ratingsMatrix[userId]:
+                if animeId in animeSet:
+                    newMatrix[userId][animeId] = ratingsMatrix[userId][animeId]
+
+    return newMatrix
             
 def getGlobalAverages(ratingsMatrix):
-    return numpy.mean(ratingsMatrix.values())
+    num = 0
+    tot = 0
+    for userId in ratingsMatrix.keys():
+        for animeId in ratingsMatrix[userId].keys():
+            num += 1
+            tot += ratingsMatrix[userId][animeId]
+    return float(tot) / num
     
 def getAnimeAverages(db, animeIds):
     animeAverages = {}
@@ -141,7 +159,7 @@ score = model.initModel(ratingsMatrix, stopThreshold=minimizeThreshold, verbose=
       
 
 # Get the predicted ratings for this user for all anime that the user does not have on her list
-goodness = [(animeId, model.predict(myId, animeId)) for animeId in animeIds if (myId,animeId) not in ratingsMatrix]
+goodness = [(animeId, model.predict(myId, animeId)) for animeId in animeIds if (myId not in ratingsMatrix or animeId not in ratingsMatrix[myId])]
 
 # Sort by the predicted value
 goodness.sort(key = lambda vTuple: vTuple[1], reverse = True)
