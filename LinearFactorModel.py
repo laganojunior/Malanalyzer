@@ -1,6 +1,7 @@
 import random
 from numpy.linalg import lstsq
 import numpy
+import cPickle
 
 class FactorModel:
     """
@@ -79,7 +80,7 @@ class FactorModel:
         meaningful, the model should have been initialized (i.e by
         calling initUseMatrix beforehand)
         """
-        
+
         return numpy.dot(self.uVecs[u], self.vVecs[v]) + self.globalBias + self.uBias[u] + self.vBias[v]
             
     def calcError(self, knownValues):
@@ -169,7 +170,22 @@ class FactorModel:
         
     def getVVecs(self):
         return self.vVecs
-                    
+
+    def save(self, fout):
+        """
+        Write a serialization of this object to a file-like object which
+        supports write()
+        """
+        cPickle.dump(self, fout)
+
+
+        
+
+def loadFactorModel(fin):
+    """
+    Deserialize a FactorModel from a file-like object
+    """
+    return cPickle.load(fin)      
             
         
         
