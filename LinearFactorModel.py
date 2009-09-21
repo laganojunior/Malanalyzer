@@ -134,6 +134,17 @@ class FactorModel:
         
         for v in self.vIds:
             vToU[v] = [u for u in self.uIds if u in knownValues and v in knownValues[u]]
+
+        # Create maps to get the y - vectors for linear regression. These 
+        # are constant, so they can be pre-computed
+        uToYVec = {}
+        vToYVec = {}
+        
+        for u in self.uIds:
+            uToYVec[u] = numpy.array([knownValues[u][v] - self.globalBias - self.uBias[u] - self.vBias[v] for v in uToV[u]])
+
+        for v in self.vIds:
+            vToYVec[v] = numpy.array([knownValues[u][v] - self.globalBias - self.uBias[u] - self.vBias[v] for u in vToU[v]])
            
         
         # Enter a loop that is only exited if the threshold is met
@@ -144,7 +155,7 @@ class FactorModel:
                     continue
                     
                 x = numpy.array([self.vVecs[v] for v in uToV[u]])
-                y = numpy.array([knownValues[u][v] - self.globalBias - self.uBias[u] - self.vBias[v] for v in uToV[u]])
+                y = uToYVec[u]
                 
                 self.uVecs[u] = lstsq(x,y)[0]
                 
@@ -154,7 +165,7 @@ class FactorModel:
                     continue
                     
                 x = numpy.array([self.uVecs[u] for u in vToU[v]])
-                y = numpy.array([knownValues[u][v] - self.globalBias - self.uBias[u] - self.vBias[v] for u in vToU[v]])
+                y = vToYVec[v]
                 
                 self.vVecs[v] = lstsq(x,y)[0]
                 
