@@ -83,14 +83,20 @@ class FactorModel:
 
         return numpy.dot(self.uVecs[u], self.vVecs[v]) + self.globalBias + self.uBias[u] + self.vBias[v]
             
-    def calcError(self, knownValues):
+    def calcRMSE(self, knownValues):
+        """
+        Calculates the Root mean of the squared errors of the model from a 
+        matrix of known values
+        """
         error = 0
+        num = 0
         for u in knownValues.keys():
             for v in knownValues[u].keys():
                 dif = knownValues[u][v] - self.predict(u, v)
                 error += dif * dif
+                num += 1
             
-        return error
+        return numpy.sqrt(float(error) / num)        
         
     def initModel(self, knownValues, stopThreshold = .01, verbose = False):
         """
@@ -100,8 +106,8 @@ class FactorModel:
         knownValues - a multi-dimensional dictionary mapping i and j, where i is 
                       in u and j is in v, to the known values of the model. Note
                       that not all possible such values need to be provided.
-        stopThreshold - the amount the sum of errors must change for minimization
-                        to continue
+        stopThreshold - the minimum amount the RMSE must decrease for 
+                        minimization to continue
         verbose  - if set to true, prints progress to standard output
                       
         Return Value:
@@ -112,11 +118,11 @@ class FactorModel:
         # I personally do not know the performance guarantees if any for this
         # algorithm.
         
-        # Calculate the initial error
-        error = self.calcError(knownValues)
+        # Calculate the initial RMSE
+        RMSE = self.calcRMSE(knownValues)
         
         if verbose:
-            print error
+            print RMSE
         
         # Create maps to easily get the known rating vectors for a particular
         # elements of u or v
@@ -153,18 +159,18 @@ class FactorModel:
                 self.vVecs[v] = lstsq(x,y)[0]
                 
             # Recalculate error and see if loop should quit
-            newError = self.calcError(knownValues)
+            newRMSE = self.calcRMSE(knownValues)
             
             if verbose:
-                print newError
+                print newRMSE
             
-            if error - newError < stopThreshold:
-                error = newError
+            if RMSE - newRMSE < stopThreshold:
+                RMSE = newRMSE
                 break
                 
-            error = newError
+            RMSE = newRMSE
             
-        return error
+        return RMSE
         
     def getUVecs(self):
         return self.uVecs

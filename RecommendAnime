@@ -8,7 +8,7 @@ Usage: RecommendAnime  [-v] [--ratings-threshold threshold]
        username filename threshold number factors
 
 username  : the username to print recommendations for       
-threshold : the minimum threshold change of the error for model minimization to continue
+threshold : the minimum RMSE decrease for model minimization to continue
 number    : the number of anime to recommend per run
 factors   : the number of linear factors in the model
        
