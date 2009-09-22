@@ -96,19 +96,35 @@ class FactorModel:
                 error += dif * dif
                 num += 1
             
-        return numpy.sqrt(float(error) / num)        
-        
-    def initModel(self, knownValues, stopThreshold = .01, verbose = False):
+        return numpy.sqrt(float(error) / num)  
+    
+    def calcRegularizedError(self, knownValues, beta):
+        error = 0
+        for u in knownValues.keys():
+            for v in knownValues[u].keys():
+                dif = knownValues[u][v] - self.predict(u, v)
+                error += dif * dif
+
+        vec = numpy.array(list(self.uVecs.values()) + list(self.vVecs.values())).flatten()
+
+        norm = numpy.dot(vec, vec)
+
+        return error + beta * norm
+            
+    def initModel(self, knownValues, stopThreshold = .01, verbose = False, beta = .0001):
         """
-        Assigns vectors to minimize the error from known values.
+        Assigns vectors to minimize the regularized error from known values.
+
+        The regularized error is sqrt(sum((known - predict) ^ 2)) + beta * norm(uVecs, vVecs) ^ 2
         
         Arguments:
         knownValues - a multi-dimensional dictionary mapping i and j, where i is 
                       in u and j is in v, to the known values of the model. Note
                       that not all possible such values need to be provided.
-        stopThreshold - the minimum amount the RMSE must decrease for 
+        stopThreshold - the minimum amount the regularized error must decrease for 
                         minimization to continue
         verbose  - if set to true, prints progress to standard output
+        beta     - the regularization parameter
                       
         Return Value:
         The total error of the generated model
@@ -118,11 +134,11 @@ class FactorModel:
         # I personally do not know the performance guarantees if any for this
         # algorithm.
         
-        # Calculate the initial RMSE
-        RMSE = self.calcRMSE(knownValues)
+        # Calculate the initial Regularized error
+        error = self.calcRegularizedError(knownValues, beta)
         
         if verbose:
-            print RMSE
+            print error
         
         # Create maps to easily get the known rating vectors for a particular
         # elements of u or v
@@ -143,10 +159,15 @@ class FactorModel:
         for u in self.uIds:
             uToYVec[u] = numpy.array([knownValues[u][v] - self.globalBias - self.uBias[u] - self.vBias[v] for v in uToV[u]])
 
+            # Append rows of 0 to attempt to minimize the squared norm of the vec during the regression
+            uToYVec[u] = numpy.append(uToYVec[u], numpy.zeros(self.numFactors))
+
         for v in self.vIds:
             vToYVec[v] = numpy.array([knownValues[u][v] - self.globalBias - self.uBias[u] - self.vBias[v] for u in vToU[v]])
-           
-        
+
+            # Append rows of 0, to attempt to minimize the squared norm of the vec during the regression
+            vToYVec[v] = numpy.append(vToYVec[v], numpy.zeros(self.numFactors))
+                   
         # Enter a loop that is only exited if the threshold is met
         while True:
             # Fix the v set and minimize the vectors for u using linear regression
@@ -156,6 +177,9 @@ class FactorModel:
                     
                 x = numpy.array([self.vVecs[v] for v in uToV[u]])
                 y = uToYVec[u]
+
+                # Append sets to minimize the squared norm of the u vec
+                x = numpy.append(x, numpy.identity(self.numFactors) * numpy.sqrt(beta), axis = 0)
                 
                 self.uVecs[u] = lstsq(x,y)[0]
                 
@@ -166,22 +190,25 @@ class FactorModel:
                     
                 x = numpy.array([self.uVecs[u] for u in vToU[v]])
                 y = vToYVec[v]
+
+                # Append a set to minimize the squared norm of the v vec
+                x = numpy.append(x, numpy.identity(self.numFactors) * numpy.sqrt(beta), axis = 0)
                 
                 self.vVecs[v] = lstsq(x,y)[0]
                 
             # Recalculate error and see if loop should quit
-            newRMSE = self.calcRMSE(knownValues)
-            
+            newError = self.calcRegularizedError(knownValues, beta)
+
             if verbose:
-                print newRMSE
-            
-            if RMSE - newRMSE < stopThreshold:
-                RMSE = newRMSE
+                print newError
+
+            if error - newError < stopThreshold:
+                error = newError
                 break
                 
-            RMSE = newRMSE
+            error = newError
             
-        return RMSE
+        return error
         
     def getUVecs(self):
         return self.uVecs

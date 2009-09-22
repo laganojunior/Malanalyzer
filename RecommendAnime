@@ -4,11 +4,12 @@ Minimizes a model to fit the database and outputs recommendations for a
 particular user
 
 Usage: RecommendAnime  [-v] [--ratings-threshold threshold] 
-       [--db filename] [--print-stats]
-       username filename threshold number factors
+       [--db filename] [--print-stats] 
+       username beta threshold number factors
 
 username  : the username to print recommendations for       
-threshold : the minimum RMSE decrease for model minimization to continue
+threshold : the minimum regularized error decrease for model minimization to continue
+beta      : the regularization parameter
 number    : the number of anime to recommend per run
 factors   : the number of linear factors in the model
        
@@ -101,6 +102,7 @@ dbFilename = "Mal.db"
 ratingsThreshold = 0
 verbose = False
 printStats = False
+regularizeParameter = None
 
 for (arg, value) in argList:
     if arg == "-v":
@@ -112,15 +114,16 @@ for (arg, value) in argList:
     elif arg =="--print-stats":
         printStats = True
 
-if len(restOfArgs) != 4:
-    print "4 non-optional arguments needed"
+if len(restOfArgs) != 5:
+    print "5 non-optional arguments needed"
     print usageStmt
     exit(1)
     
 username = restOfArgs[0]    
 minimizeThreshold = float(restOfArgs[1])
-number = int(restOfArgs[2])
-factors = int(restOfArgs[3])
+beta = float(restOfArgs[2])
+number = int(restOfArgs[3])
+factors = int(restOfArgs[4])
 
 # Open up the database and obtain the full ratings matrix 
 db = MemReader(dbFilename)
@@ -155,7 +158,7 @@ subtractFromMap(userBias, globalAverageRating)
 model = FactorModel(userIds, animeIds, factors, globalBias = globalAverageRating,
                     uBias = userBias, vBias = animeBias)
 model.randomize()
-score = model.initModel(ratingsMatrix, stopThreshold=minimizeThreshold, verbose=verbose)
+score = model.initModel(ratingsMatrix, stopThreshold=minimizeThreshold, verbose=verbose, beta=beta)
       
 
 # Get the predicted ratings for this user for all anime that the user does not have on her list
