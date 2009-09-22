@@ -156,7 +156,7 @@ subtractFromMap(userBias, globalAverageRating)
 
 # Minimize a model to fit the data
 model = FactorModel(userIds, animeIds, factors, globalBias = globalAverageRating,
-                    uBias = userBias, vBias = animeBias)
+                    uBias = userBias, vBias = None)
 model.randomize()
 score = model.initModel(ratingsMatrix, stopThreshold=minimizeThreshold, verbose=verbose, beta=beta)
       
