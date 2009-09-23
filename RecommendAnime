@@ -5,7 +5,7 @@ particular user
 
 Usage: RecommendAnime  [-v] [--ratings-threshold threshold] 
        [--db filename] [--print-stats] 
-       username beta threshold number factors
+       username threshold beta number factors
 
 username  : the username to print recommendations for       
 threshold : the minimum regularized error decrease for model minimization to continue
