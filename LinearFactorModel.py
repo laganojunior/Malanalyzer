@@ -216,6 +216,12 @@ class FactorModel:
     def getVVecs(self):
         return self.vVecs
 
+    def getUIds(self):
+        return self.uIds
+    
+    def getVIds(self):
+        return self.vIds
+
     def save(self, fout):
         """
         Write a serialization of this object to a file-like object which
