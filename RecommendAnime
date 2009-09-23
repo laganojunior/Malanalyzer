@@ -3,166 +3,65 @@ usageStmt = """
 Minimizes a model to fit the database and outputs recommendations for a 
 particular user
 
-Usage: RecommendAnime  [-v] [--ratings-threshold threshold] 
-       [--db filename] [--print-stats] 
-       username threshold beta number factors
+Usage: RecommendAnime [--print-stats] [--db filename]
+       username number model
 
 username  : the username to print recommendations for       
-threshold : the minimum regularized error decrease for model minimization to continue
-beta      : the regularization parameter
 number    : the number of anime to recommend per run
-factors   : the number of linear factors in the model
+model     : the filename to load the model from
        
-If -v is defined, then the model minimization is verbose, and the error value
-is printed every least squares pass to standard output (not to the results file)
-
-If --ratings-threshold is defined, then only anime with at least that number of 
-raters are considered. Otherwise, all anime are considered.
+If --print-stats is defined, then extra statistics for recommended anime is 
+provided.
 
 If --db is provided, then the filename provided is used as the database. Otherwise,
 Mal.db is used as the database.
-
-If --print-stats is defined, then extra statistics for recommended anime is 
-provided.
 """
 
 from MalDB import MemReader
-from LinearFactorModel import FactorModel
+from LinearFactorModel import loadFactorModel
 import numpy
 import sys
 import getopt
 
-def restrictMinRaters(db, animeIds, threshold):
-    return [animeId for animeId in animeIds if len(db.getUserRatingsForAnime(animeId)) >= threshold]
-    
-def restrictRatingsMatrix(ratingsMatrix, userIds, animeIds):
-    userSet = set(userIds)
-    animeSet = set(animeIds)
-
-    newMatrix = {}
-    for userId in ratingsMatrix.keys():
-        if userId in userSet:
-            newMatrix[userId] = {}
-
-            for animeId in ratingsMatrix[userId]:
-                if animeId in animeSet:
-                    newMatrix[userId][animeId] = ratingsMatrix[userId][animeId]
-
-    return newMatrix
-            
-def getGlobalAverages(ratingsMatrix):
-    num = 0
-    tot = 0
-    for userId in ratingsMatrix.keys():
-        for animeId in ratingsMatrix[userId].keys():
-            num += 1
-            tot += ratingsMatrix[userId][animeId]
-    return float(tot) / num
-    
-def getAnimeAverages(db, animeIds):
-    animeAverages = {}
-    for anime in animeIds:
-        ratingsMap =  db.getUserRatingsForAnime(anime)
-        
-        if len(ratingsMap) == 0:
-            animeAverages[anime] = 0
-        else:
-            animeAverages[anime] = numpy.mean(ratingsMap.values())
-
-    return animeAverages
-    
-def getUserAverages(db, userIds):
-    userAverages = {}
-    for user in userIds:
-        ratingsMap = db.getAnimeRatingsForUser(user)
-        
-        if len(ratingsMap) == 0:
-            userAverages[user] = 0
-        else:
-            userAverages[user] = numpy.mean(ratingsMap.values())
-    
-    return userAverages
-    
-def subtractFromMap(map, val):
-    for key in map.keys():
-        map[key] -= val
-            
-
 # Process arguments
 try:
     argList, restOfArgs = getopt.getopt(sys.argv[1:],"v",
-                          ["ratings-threshold=", "db=", "clear-results","print-stats"])
+                          ["print-stats"])
                           
 except getopt.GetoptError, e:
     print e
     print usageStmt
     exit(1)
 
-dbFilename = "Mal.db"
-ratingsThreshold = 0
-verbose = False
 printStats = False
-regularizeParameter = None
+dbFilename = "Mal.db"
 
 for (arg, value) in argList:
-    if arg == "-v":
-        verbose = True
-    elif arg == "--ratings-threshold":
-        ratingsThreshold = int(value)
+    if arg =="--print-stats":
+        printStats = True
     elif arg == "--db":
         dbFilename = value
-    elif arg =="--print-stats":
-        printStats = True
 
-if len(restOfArgs) != 5:
-    print "5 non-optional arguments needed"
+if len(restOfArgs) != 3:
+    print "3 non-optional arguments needed"
     print usageStmt
     exit(1)
     
 username = restOfArgs[0]    
-minimizeThreshold = float(restOfArgs[1])
-beta = float(restOfArgs[2])
-number = int(restOfArgs[3])
-factors = int(restOfArgs[4])
+number = int(restOfArgs[1])
+modelfilename = restOfArgs[2]
 
-# Open up the database and obtain the full ratings matrix 
+# Open up the database and obtain the username id and the anime he/she rated
 db = MemReader(dbFilename)
-ratingsMatrix = db.getRatingsMatrix()
-
-# Get the id for the username
-myId = db.getUserId(username)   
-
-# If needed, restrict the list of ids and get the corresponding restricted
-# ratings matrix
-animeIds = db.getAllAnimeIds()
-userIds = db.getAllUserIds()
-
-if ratingsThreshold > 0:
-    oldSize = len(animeIds)
-    animeIds = restrictMinRaters(db, animeIds, ratingsThreshold)
-    ratingsMatrix = restrictRatingsMatrix(ratingsMatrix, userIds, animeIds)
-    if verbose:
-        print "Using minimum raters of", ratingsThreshold, ", animes shrunk from", oldSize, "to", len(animeIds)
-
-    
-globalAverageRating = getGlobalAverages(ratingsMatrix)
-
-animeBias    = getAnimeAverages(db, animeIds)
-subtractFromMap(animeBias, globalAverageRating)
-
-userBias     = getUserAverages(db, userIds)
-subtractFromMap(userBias, globalAverageRating)
-
-
-# Minimize a model to fit the data
-model = FactorModel(userIds, animeIds, factors, globalBias = globalAverageRating,
-                    uBias = userBias, vBias = None)
-model.randomize()
-score = model.initModel(ratingsMatrix, stopThreshold=minimizeThreshold, verbose=verbose, beta=beta)
-      
+userId = db.getUserId(username) 
+ratingsMap = db.getAnimeRatingsForUser(userId)
+  
+# Load up the model from file
+model = loadFactorModel(open(modelfilename, "r"))
 
 # Get the predicted ratings for this user for all anime that the user does not have on her list
-goodness = [(animeId, model.predict(myId, animeId)) for animeId in animeIds if (myId not in ratingsMatrix or animeId not in ratingsMatrix[myId])]
+animeIds = model.getVIds()
+goodness = [(animeId, model.predict(userId, animeId)) for animeId in animeIds if animeId not in ratingsMap]
 
 # Sort by the predicted value
 goodness.sort(key = lambda vTuple: vTuple[1], reverse = True)

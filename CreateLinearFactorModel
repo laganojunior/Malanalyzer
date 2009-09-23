@@ -1,0 +1,153 @@
+#!/usr/bin/env python
+usageStmt = """
+Minimizes a model to fit the database and outputs recommendations for a 
+particular user
+
+Usage: RecommendAnime  [-v] [--ratings-threshold threshold] [--db filename]
+       threshold beta factors outputFilename
+
+threshold : the minimum regularized error decrease for model minimization to continue
+beta      : the regularization parameter
+factors   : the number of linear factors in the model
+outputFilename : the filename to write the model to
+       
+If -v is defined, then the model minimization is verbose, and the error value
+is printed every least squares pass to standard output (not to the results file)
+
+If --ratings-threshold is defined, then only anime with at least that number of 
+raters are considered. Otherwise, all anime are considered.
+
+If --db is provided, then the filename provided is used as the database. Otherwise,
+Mal.db is used as the database.
+"""
+
+from MalDB import MemReader
+from LinearFactorModel import FactorModel
+import numpy
+import sys
+import getopt
+
+def restrictMinRaters(db, animeIds, threshold):
+    return [animeId for animeId in animeIds if len(db.getUserRatingsForAnime(animeId)) >= threshold]
+    
+def restrictRatingsMatrix(ratingsMatrix, userIds, animeIds):
+    userSet = set(userIds)
+    animeSet = set(animeIds)
+
+    newMatrix = {}
+    for userId in ratingsMatrix.keys():
+        if userId in userSet:
+            newMatrix[userId] = {}
+
+            for animeId in ratingsMatrix[userId]:
+                if animeId in animeSet:
+                    newMatrix[userId][animeId] = ratingsMatrix[userId][animeId]
+
+    return newMatrix
+            
+def getGlobalAverages(ratingsMatrix):
+    num = 0
+    tot = 0
+    for userId in ratingsMatrix.keys():
+        for animeId in ratingsMatrix[userId].keys():
+            num += 1
+            tot += ratingsMatrix[userId][animeId]
+    return float(tot) / num
+    
+def getAnimeAverages(db, animeIds):
+    animeAverages = {}
+    for anime in animeIds:
+        ratingsMap =  db.getUserRatingsForAnime(anime)
+        
+        if len(ratingsMap) == 0:
+            animeAverages[anime] = 0
+        else:
+            animeAverages[anime] = numpy.mean(ratingsMap.values())
+
+    return animeAverages
+    
+def getUserAverages(db, userIds):
+    userAverages = {}
+    for user in userIds:
+        ratingsMap = db.getAnimeRatingsForUser(user)
+        
+        if len(ratingsMap) == 0:
+            userAverages[user] = 0
+        else:
+            userAverages[user] = numpy.mean(ratingsMap.values())
+    
+    return userAverages
+    
+def subtractFromMap(map, val):
+    for key in map.keys():
+        map[key] -= val
+            
+
+# Process arguments
+try:
+    argList, restOfArgs = getopt.getopt(sys.argv[1:],"v",
+                          ["ratings-threshold=", "db="])
+                          
+except getopt.GetoptError, e:
+    print e
+    print usageStmt
+    exit(1)
+
+dbFilename = "Mal.db"
+ratingsThreshold = 0
+verbose = False
+
+for (arg, value) in argList:
+    if arg == "-v":
+        verbose = True
+    elif arg == "--ratings-threshold":
+        ratingsThreshold = int(value)
+    elif arg == "--db":
+        dbFilename = value
+
+if len(restOfArgs) != 4:
+    print "4 non-optional arguments needed,", len(restOfArgs), "provided"
+    print usageStmt
+    exit(1)
+    
+minimizeThreshold = float(restOfArgs[0])
+beta = float(restOfArgs[1])
+factors = int(restOfArgs[2])
+outfilename = restOfArgs[3]
+
+# Open up the database and obtain the full ratings matrix 
+db = MemReader(dbFilename)
+ratingsMatrix = db.getRatingsMatrix()  
+
+# If needed, restrict the list of ids and get the corresponding restricted
+# ratings matrix
+animeIds = db.getAllAnimeIds()
+userIds = db.getAllUserIds()
+
+if ratingsThreshold > 0:
+    oldSize = len(animeIds)
+    animeIds = restrictMinRaters(db, animeIds, ratingsThreshold)
+    ratingsMatrix = restrictRatingsMatrix(ratingsMatrix, userIds, animeIds)
+    if verbose:
+        print "Using minimum raters of", ratingsThreshold, ", animes shrunk from", oldSize, "to", len(animeIds)
+
+    
+globalAverageRating = getGlobalAverages(ratingsMatrix)
+
+animeBias    = getAnimeAverages(db, animeIds)
+subtractFromMap(animeBias, globalAverageRating)
+
+userBias     = getUserAverages(db, userIds)
+subtractFromMap(userBias, globalAverageRating)
+
+
+# Minimize a model to fit the data
+model = FactorModel(userIds, animeIds, factors, globalBias = globalAverageRating,
+                    uBias = userBias, vBias = None)
+model.randomize()
+score = model.initModel(ratingsMatrix, stopThreshold=minimizeThreshold, verbose=verbose, beta=beta)
+
+if verbose:
+    print "Done, saving to", outfilename
+
+model.save(open(outfilename, "w"))      
