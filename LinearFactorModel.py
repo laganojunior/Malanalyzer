@@ -133,12 +133,18 @@ class FactorModel:
         # Do minimization by alternating minimizing while fixing the u or v vecs.
         # I personally do not know the performance guarantees if any for this
         # algorithm.
-        
-        # Calculate the initial Regularized error
-        error = self.calcRegularizedError(knownValues, beta)
-        
-        if verbose:
-            print error
+
+        uLength = len(self.uIds)
+        vLength = len(self.vIds)
+
+        # Create maps to easily get the index of an element in the uid array
+        uIndex = {}
+        for index, u in enumerate(self.uIds):
+            uIndex[u] = index
+
+        vIndex = {}
+        for index, v in enumerate(self.vIds):
+            vIndex[v] = index
         
         # Create maps to easily get the known rating vectors for a particular
         # elements of u or v
@@ -151,53 +157,80 @@ class FactorModel:
         for v in self.vIds:
             vToU[v] = [u for u in self.uIds if u in knownValues and v in knownValues[u]]
 
-        # Create maps to get the y - vectors for linear regression. These 
-        # are constant, so they can be pre-computed
-        uToYVec = {}
-        vToYVec = {}
+        # Create the y vectors. These are constant.
+        uYVecs = [numpy.zeros(len(uToV[u]) + self.numFactors) for u in self.uIds]
+            
+        for index, u in enumerate(self.uIds):
+            # These are the values for errors from known values, everything
+            # else is left at 0
+            for index2, v in enumerate(uToV[u]):
+                uYVecs[index][index2] = knownValues[u][v] - self.uBias[u] - self.vBias[v] - self.globalBias
+
+        vYVecs = [numpy.zeros(len(vToU[v]) + self.numFactors) for v in self.vIds]
+
+        for index, v in enumerate(self.vIds):
+            # These are the values for errors from known values
+            for index2, u in enumerate(vToU[v]):
+                vYVecs[index][index2] = knownValues[u][v] - self.uBias[u] - self.vBias[v] - self.globalBias
+
+        # Create the set of x vectors. These consist of the vectors
+        # that represent known interactions (I.e. the u or v vectors), and some
+        # scale vectors to minimize the norm of the linear regression result
+        uXVecs = numpy.zeros((vLength + self.numFactors, self.numFactors))
+
+        for index, v in enumerate(self.vIds):
+            uXVecs[index][:] = self.vVecs[v][:]
+
+        for index in range(self.numFactors):
+            uXVecs[vLength + index][index] = numpy.sqrt(beta)
+
+        vXVecs = numpy.zeros((uLength + self.numFactors, self.numFactors))
+
+        for index, u in enumerate(self.uIds):
+            vXVecs[index][:] = self.uVecs[u][:]
+
+        for index in range(self.numFactors):
+            vXVecs[uLength + index][index] = numpy.sqrt(beta)
         
-        for u in self.uIds:
-            uToYVec[u] = numpy.array([knownValues[u][v] - self.globalBias - self.uBias[u] - self.vBias[v] for v in uToV[u]])
+        # Create the x masks. The x vecs aren't constant, but references to
+        # the ones needed are constant. Here are masks that are true only for
+        # the needed vectors.
+        uXMasks = numpy.repeat(False, uLength * (vLength + self.numFactors)).reshape(uLength, vLength + self.numFactors) 
+            
+        for index, u in enumerate(self.uIds):
+            for v in uToV[u]:
+                uXMasks[index][vIndex[v]] = True
+            
+            for i in range(self.numFactors):
+                uXMasks[index][vLength + i] = True
 
-            # Append rows of 0 to attempt to minimize the squared norm of the vec during the regression
-            uToYVec[u] = numpy.append(uToYVec[u], numpy.zeros(self.numFactors))
+        vXMasks = numpy.repeat(False, vLength * (uLength + self.numFactors)).reshape(vLength, uLength + self.numFactors) 
+            
+        for index, v in enumerate(self.vIds):
+            for u in vToU[v]:
+                vXMasks[index][uIndex[u]] = True
+            
+            for i in range(self.numFactors):
+                vXMasks[index][uLength + i] = True
+        
 
-        for v in self.vIds:
-            vToYVec[v] = numpy.array([knownValues[u][v] - self.globalBias - self.uBias[u] - self.vBias[v] for u in vToU[v]])
-
-            # Append rows of 0, to attempt to minimize the squared norm of the vec during the regression
-            vToYVec[v] = numpy.append(vToYVec[v], numpy.zeros(self.numFactors))
-                   
         # Enter a loop that is only exited if the threshold is met
+        error = 1.0 * 10 ** 20
         while True:
-            # Fix the v set and minimize the vectors for u using linear regression
-            for u in self.uIds:
-                if len(uToV[u]) == 0:
-                    continue
-                    
-                x = numpy.array([self.vVecs[v] for v in uToV[u]])
-                y = uToYVec[u]
-
-                # Append sets to minimize the squared norm of the u vec
-                x = numpy.append(x, numpy.identity(self.numFactors) * numpy.sqrt(beta), axis = 0)
-                
-                self.uVecs[u] = lstsq(x,y)[0]
+            # Fix the v set and minimize the vectors for u using linear regression 
+            newError = 0          
+            for i in range(uLength):
+                result = lstsq(uXVecs[uXMasks[i]], uYVecs[i])
+                vXVecs[i] = result[0]
+                if result[1].shape != (0,):
+                    newError += result[1][0]
                 
             # Similarly fix the u set and minimize for v
-            for v in self.vIds:
-                if len(vToU[v]) == 0:
-                    continue
-                    
-                x = numpy.array([self.uVecs[u] for u in vToU[v]])
-                y = vToYVec[v]
-
-                # Append a set to minimize the squared norm of the v vec
-                x = numpy.append(x, numpy.identity(self.numFactors) * numpy.sqrt(beta), axis = 0)
-                
-                self.vVecs[v] = lstsq(x,y)[0]
-                
-            # Recalculate error and see if loop should quit
-            newError = self.calcRegularizedError(knownValues, beta)
+            for i in range(vLength):
+                result = lstsq(vXVecs[vXMasks[i]], vYVecs[i])
+                uXVecs[i] = result[0]
+                if result[1].shape != (0,):
+                    newError += result[1][0]
 
             if verbose:
                 print newError
@@ -207,6 +240,14 @@ class FactorModel:
                 break
                 
             error = newError
+
+        # Reassign the u and v vecs back to the dictionary
+        for i in range(uLength):
+            self.uVecs[self.uIds[i]] = vXVecs[i]
+
+        for i in range(vLength):
+            self.vVecs[self.vIds[i]] = uXVecs[i]
+
             
         return error
         
