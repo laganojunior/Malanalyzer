@@ -208,20 +208,7 @@ class FactorModel:
                 vXMasks[index][uIndex[u]] = True
             
             for i in range(self.numFactors):
-                vXMasks[index][uLength + i] = True
-
-        # Create vectors to scale the residuals to avoid double counting the
-        # residuals from the errors from known values
-        uScale = numpy.ones(vLength + self.numFactors)
-        
-        for i in range(vLength):
-            uScale[i] = .5
-
-        vScale = numpy.ones(uLength + self.numFactors)
-            
-        for i in range(uLength):
-            vScale[i] = .5
-        
+                vXMasks[index][uLength + i] = True        
 
         # Enter a loop that is exited if the time limit is reached
         referTime = time.time()
@@ -235,7 +222,6 @@ class FactorModel:
                 vXVecs[i] = lstsq(x,y)[0]
                 
             # Similarly fix the u set and minimize for v
-            newError = 0
             for i in range(vLength):
                 x = vXVecs[vXMasks[i]]
                 y = vYVecs[i]
