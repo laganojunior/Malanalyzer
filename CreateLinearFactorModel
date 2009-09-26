@@ -4,9 +4,9 @@ Minimizes a model to fit the database and outputs recommendations for a
 particular user
 
 Usage: RecommendAnime  [-v] [--ratings-threshold threshold] [--db filename]
-       threshold beta factors outputFilename
+       iterLimit beta factors outputFilename
 
-threshold : the minimum regularized error decrease for model minimization to continue
+iterLimit : the maximum iterations to spend on the main regression loop
 beta      : the regularization parameter
 factors   : the number of linear factors in the model
 outputFilename : the filename to write the model to
@@ -110,7 +110,7 @@ if len(restOfArgs) != 4:
     print usageStmt
     exit(1)
     
-minimizeThreshold = float(restOfArgs[0])
+iterLimit = int(restOfArgs[0])
 beta = float(restOfArgs[1])
 factors = int(restOfArgs[2])
 outfilename = restOfArgs[3]
@@ -145,7 +145,7 @@ subtractFromMap(userBias, globalAverageRating)
 model = FactorModel(userIds, animeIds, factors, globalBias = globalAverageRating,
                     uBias = userBias, vBias = None)
 model.randomize()
-score = model.initModel(ratingsMatrix, stopThreshold=minimizeThreshold, verbose=verbose, beta=beta)
+score = model.initModel(ratingsMatrix, iterLimit=iterLimit, verbose=verbose, beta=beta)
 
 if verbose:
     print "Done, saving to", outfilename

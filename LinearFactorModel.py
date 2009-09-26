@@ -2,6 +2,7 @@ import random
 from numpy.linalg import lstsq
 import numpy
 import cPickle
+import time
 
 class FactorModel:
     """
@@ -111,7 +112,7 @@ class FactorModel:
 
         return error + beta * norm
             
-    def initModel(self, knownValues, stopThreshold = .01, verbose = False, beta = .0001):
+    def initModel(self, knownValues, iterLimit = 1, verbose = False, beta = .0001):
         """
         Assigns vectors to minimize the regularized error from known values.
 
@@ -121,13 +122,9 @@ class FactorModel:
         knownValues - a multi-dimensional dictionary mapping i and j, where i is 
                       in u and j is in v, to the known values of the model. Note
                       that not all possible such values need to be provided.
-        stopThreshold - the minimum amount the regularized error must decrease for 
-                        minimization to continue
+        iterLimit   - the maximum amount of iterations to spend in the main regression loop.
         verbose  - if set to true, prints progress to standard output
         beta     - the regularization parameter
-                      
-        Return Value:
-        The total error of the generated model
         """
         
         # Do minimization by alternating minimizing while fixing the u or v vecs.
@@ -212,34 +209,48 @@ class FactorModel:
             
             for i in range(self.numFactors):
                 vXMasks[index][uLength + i] = True
+
+        # Create vectors to scale the residuals to avoid double counting the
+        # residuals from the errors from known values
+        uScale = numpy.ones(vLength + self.numFactors)
+        
+        for i in range(vLength):
+            uScale[i] = .5
+
+        vScale = numpy.ones(uLength + self.numFactors)
+            
+        for i in range(uLength):
+            vScale[i] = .5
         
 
-        # Enter a loop that is only exited if the threshold is met
-        error = 1.0 * 10 ** 20
+        # Enter a loop that is exited if the time limit is reached
+        referTime = time.time()
+        iterCount = 0
         while True:
             # Fix the v set and minimize the vectors for u using linear regression 
-            newError = 0          
             for i in range(uLength):
-                result = lstsq(uXVecs[uXMasks[i]], uYVecs[i])
-                vXVecs[i] = result[0]
-                if result[1].shape != (0,):
-                    newError += result[1][0]
+                x = uXVecs[uXMasks[i]]
+                y = uYVecs[i]
+
+                vXVecs[i] = lstsq(x,y)[0]
                 
             # Similarly fix the u set and minimize for v
+            newError = 0
             for i in range(vLength):
-                result = lstsq(vXVecs[vXMasks[i]], vYVecs[i])
-                uXVecs[i] = result[0]
-                if result[1].shape != (0,):
-                    newError += result[1][0]
+                x = vXVecs[vXMasks[i]]
+                y = vYVecs[i]
 
+                uXVecs[i] = lstsq(x, y)[0]
+
+            
             if verbose:
-                print newError
+                iterCount += 1
+                print "Iteration", iterCount, "of", iterLimit, ":", time.time() - referTime, "seconds"
 
-            if error - newError < stopThreshold:
-                error = newError
+            if iterCount >= iterLimit:
                 break
-                
-            error = newError
+
+            
 
         # Reassign the u and v vecs back to the dictionary
         for i in range(uLength):
@@ -247,9 +258,6 @@ class FactorModel:
 
         for i in range(vLength):
             self.vVecs[self.vIds[i]] = uXVecs[i]
-
-            
-        return error
         
     def getUVecs(self):
         return self.uVecs
