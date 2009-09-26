@@ -48,7 +48,7 @@ class Bimap:
         Exception - if there is no key for the supplied value
         """
         if value not in self.valToKey:
-            raise Exception("Error in Bimap key(): No key for value %s")
+            raise Exception("Error in Bimap key(): No key for value %s" % value)
 
         return self.valToKey[value]
 
