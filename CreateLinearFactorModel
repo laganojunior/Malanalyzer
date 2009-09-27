@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 usageStmt = """
-Minimizes a model to fit the database and outputs recommendations for a 
-particular user
+Repeatedly minimizes a model to fit the database and outputs recommendations for a 
+particular user. This script is an infinite loop, which is only broken when a 
+termination signal is sent.
 
 Usage: CreateLinearFactorModel  [-v] [--ratings-threshold threshold] [--db filename]
-       iterLimit beta factors outputFilename
+       [--max-strikes strikes] [--starting-beta]
+       iterLimit factors hiddenRatio outputFilename
 
-iterLimit : the maximum iterations to spend on the main regression loop
-beta      : the regularization parameter
+iterLimit : the maximum iterations to spend on each regression loop
 factors   : the number of linear factors in the model
+hiddenRatio : the fraction of elements to keep hidden from training and used for validation
 outputFilename : the filename to write the model to
        
 If -v is defined, then the model minimization is verbose, printing progress per iteration
@@ -18,6 +20,11 @@ raters are considered. Otherwise, all anime are considered.
 
 If --db is provided, then the filename provided is used as the database. Otherwise,
 Mal.db is used as the database.
+
+If --max-strikes is provided, the value is used as the amount of times improvement can
+be stalled until the model is randomized to a new start. Default is 3
+
+If --starting-beta is provided, the value is used as the first beta guess. Default is 10.
 """
 
 from MalDB import MemReader
@@ -25,6 +32,7 @@ from LinearFactorModel import FactorModel
 import numpy
 import sys
 import getopt
+import random
 
 def restrictMinRaters(db, animeIds, threshold):
     return [animeId for animeId in animeIds if len(db.getUserRatingsForAnime(animeId)) >= threshold]
@@ -85,7 +93,7 @@ def subtractFromMap(map, val):
 # Process arguments
 try:
     argList, restOfArgs = getopt.getopt(sys.argv[1:],"v",
-                          ["ratings-threshold=", "db="])
+                          ["ratings-threshold=", "db=","max-strikes=","starting-beta="])
                           
 except getopt.GetoptError, e:
     print e
@@ -95,6 +103,8 @@ except getopt.GetoptError, e:
 dbFilename = "Mal.db"
 ratingsThreshold = 0
 verbose = False
+maxStrikes = 3
+beta = 10
 
 for (arg, value) in argList:
     if arg == "-v":
@@ -103,6 +113,12 @@ for (arg, value) in argList:
         ratingsThreshold = int(value)
     elif arg == "--db":
         dbFilename = value
+    elif arg == "--max-strikes":
+        maxStrikes = int(value)
+        assert(maxStrikes > 0)
+    elif arg == "--starting-beta":
+        beta = float(value)
+        assert(beta >= 0)
 
 if len(restOfArgs) != 4:
     print "4 non-optional arguments needed,", len(restOfArgs), "provided"
@@ -110,9 +126,13 @@ if len(restOfArgs) != 4:
     exit(1)
     
 iterLimit = int(restOfArgs[0])
-beta = float(restOfArgs[1])
-factors = int(restOfArgs[2])
+factors = int(restOfArgs[1])
+hiddenRatio = float(restOfArgs[2])
 outfilename = restOfArgs[3]
+
+assert(hiddenRatio > 0 and hiddenRatio < 1)
+assert(iterLimit > 0)
+assert(factors > 0)
 
 # Open up the database and obtain the full ratings matrix 
 db = MemReader(dbFilename)
@@ -130,7 +150,29 @@ if ratingsThreshold > 0:
     if verbose:
         print "Using minimum raters of", ratingsThreshold, ", animes shrunk from", oldSize, "to", len(animeIds)
 
-    
+
+# Split the ratingsMatrix into training and hidden
+trainingMatrix = {}
+hiddenMatrix = {}
+for user in userIds:
+    trainingMatrix[user] = {}
+    hiddenMatrix[user]   = {}
+
+    if user not in ratingsMatrix:
+        continue
+
+    userAnimes = ratingsMatrix[user].keys()
+    hiddenSet = set(random.sample(userAnimes, int(len(userAnimes) * hiddenRatio)))
+    trainingSet = set(userAnimes) - hiddenSet
+
+    for anime in trainingSet:
+        trainingMatrix[user][anime] = ratingsMatrix[user][anime]
+
+    for anime in hiddenSet:
+        hiddenMatrix[user][anime] = ratingsMatrix[user][anime]
+
+
+# Generate biases from the average ratings    
 globalAverageRating = getGlobalAverages(ratingsMatrix)
 
 animeBias    = getAnimeAverages(db, animeIds)
@@ -140,13 +182,54 @@ userBias     = getUserAverages(db, userIds)
 subtractFromMap(userBias, globalAverageRating)
 
 
-# Minimize a model to fit the data
+# Enter infinite loop
+bestRMSE    = sys.maxint
+bestBeta    = beta
+referRMSE   = bestRMSE
+
 model = FactorModel(userIds, animeIds, factors, globalBias = globalAverageRating,
                     uBias = userBias, vBias = None)
-model.randomize()
-score = model.initModel(ratingsMatrix, iterLimit=iterLimit, verbose=verbose, beta=beta)
 
-if verbose:
-    print "Done, saving to", outfilename
+strikes = 0
+while True:
+    print "Trying beta =", beta
 
-model.save(open(outfilename, "w"))      
+    # Minimize the model to fit the training set
+    model.initModel(trainingMatrix, iterLimit=iterLimit, verbose=verbose, beta=beta)
+
+    # Test its prediction on the hidden set
+    RMSE = model.calcRMSE(hiddenMatrix)
+
+    print "RMSE is", RMSE
+    
+    # Save model if the RMSE is the best found so far
+    if RMSE < bestRMSE:
+        bestRMSE = RMSE
+        bestBeta = beta
+        strikes = 0
+        
+        print "New best RMSE is", RMSE," from beta =", beta
+        print "Saving this model to", outfilename
+        model.save(open(outfilename,"w"))
+    else:
+        print "Best RMSE is still", bestRMSE, "from beta =", beta        
+
+    # Check if the RMSE passed the reference point 
+    if RMSE < referRMSE:
+        # If so, set the reference RMSE and reset the strike count
+        referRMSE = RMSE
+        strikes = 0
+    else:
+        # Otherwise, increase the strike count
+        strikes += 1
+
+    # If the strike count is large, then progress is most likely stopped.
+    # Start again at a random point
+    if strikes >= maxStrikes:
+        print "Improvement stopped, randomizing model"
+        model.randomize()
+        referRMSE = sys.maxint
+        strikes = 0
+        beta = random.uniform(bestBeta * 3 / 4, bestBeta * 3 / 2)
+
+    print
