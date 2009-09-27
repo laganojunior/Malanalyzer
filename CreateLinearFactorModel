@@ -3,7 +3,7 @@ usageStmt = """
 Minimizes a model to fit the database and outputs recommendations for a 
 particular user
 
-Usage: RecommendAnime  [-v] [--ratings-threshold threshold] [--db filename]
+Usage: CreateLinearFactorModel  [-v] [--ratings-threshold threshold] [--db filename]
        iterLimit beta factors outputFilename
 
 iterLimit : the maximum iterations to spend on the main regression loop
