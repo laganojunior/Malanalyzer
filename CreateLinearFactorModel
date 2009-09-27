@@ -11,8 +11,7 @@ beta      : the regularization parameter
 factors   : the number of linear factors in the model
 outputFilename : the filename to write the model to
        
-If -v is defined, then the model minimization is verbose, and the error value
-is printed every least squares pass to standard output (not to the results file)
+If -v is defined, then the model minimization is verbose, printing progress per iteration
 
 If --ratings-threshold is defined, then only anime with at least that number of 
 raters are considered. Otherwise, all anime are considered.

@@ -182,6 +182,7 @@ class MemReader:
         # Convert the ratings triples to the desired mappings
         self.userRatingMap = {}
         self.animeRatingMap = {}
+
         for (userId, animeId, rating) in ratingTriples:
             if userId not in self.userRatingMap:
                 self.userRatingMap[userId] = {}
