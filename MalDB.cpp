@@ -164,6 +164,7 @@ const vector< vector<double> >& MalDBReader :: getRatingsMatrixTranspose()
 {
     return ratingsMatrixTranspose;
 }
+
 const vector<vector <unsigned int> >& MalDBReader :: getAnimeRatedList()
 {
     return userToAnimeRated;
