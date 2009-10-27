@@ -1,154 +1,40 @@
 import sqlite3
 from Bimap import Bimap
 
-class MalDB:
+class DBWriter:
     """
-    This is the interface to the underlying sqlite3 database stored on the hard
-    disk. All I/O functions will apply directly to the database connection, so
-    changes outside of this connection are immediately visible. For changes made
-    in this connection to be viewable outside, call saveChanges()
+    This class provides an interface for adding entries into the database.
+    Changes made are not saved until saveChanges() is called. 
     """
     
     def __init__(self, dbName):
         self.conn = sqlite3.connect(dbName)
         
     def addUser(self, username, id):
-        self.conn.cursor().execute("insert or ignore into userIds('id','name') values(?,?)", (id, username))
+        self.conn.cursor().execute("insert or ignore into userIds('id','name') \
+                                    values(?,?)", (id, username))
         
     def addAnime(self, animename, id):
-        self.conn.cursor().execute("insert or ignore into animeIds('id','name') values(?,?)", (id, animename))
-        
-    def getUserId(self, username):
-        c = self.conn.cursor()
-        
-        c.execute("select id from userIds where name=?", (username,))
-        row = c.fetchone()
-        
-        if row is None:
-            raise Exception("No id for username %s" % (username))
-            
-        return row[0]
-        
-    def getAnimeId(self, animename):
-        c = self.conn.cursor()
-        
-        c.execute("select id from animeIds where name=?", (animename,))
-        row = c.fetchone()
-        
-        if row is None:
-            raise Exception("No id for anime %s" % (animename))
-        
-        return row[0]
-        
-    def getAllUserIds(self):
-        c = self.conn.cursor()
-        
-        c.execute("select distinct id from userIds")
-        
-        return [row[0] for row in c]
-        
-    def getAllAnimeIds(self):
-        c = self.conn.cursor()
-        
-        c.execute("select distinct id from animeIds")
-        
-        return [row[0] for row in c]
-        
-    def getUserName(self, userId):
-        c = self.conn.cursor()
-        
-        c.execute("select name from userIds where id=?", (userId,))
-        row = c.fetchone()
-        
-        if row is None:
-            raise Exception("No username for id %s" % (userId))
-            
-        return row[0]
-        
-    def getAnimeName(self, animeId):
-        c = self.conn.cursor()
-        
-        c.execute("select name from animeIds where id=?", (animeId,))
-        row = c.fetchone()
-        
-        if row is None:
-            raise Exception("No anime name for id %s" % (animeId))
-            
-        return row[0]
+        self.conn.cursor().execute("insert or ignore into \
+                     animeIds('id','name') values(?,?)", (id, animename))
         
     def addAnimeRating(self, userId, animeId, rating):
-        self.conn.cursor().execute("insert or replace into ratings('userId','animeId','rating') values(?,?,?)", (userId, animeId, rating))
+        self.conn.cursor().execute("insert or replace into ratings('userId',\
+               'animeId','rating') values(?,?,?)", (userId, animeId, rating))
         
     def saveChanges(self):
         self.conn.commit()
             
-    def getAnimeRatingsForUser(self, userId):
-        """
-        Returns a dictionary mapping animeIds to ratings for a particular user
-        
-        Arguments:
-        userId - the id of the user to getting anime ratings for
-        """
-        
-        c = self.conn.cursor()
-        c.execute("select animeId, rating from ratings where userId=? and rating <> 0", (userId,))
-        
-        ratingMap = {}
-        
-        for row in c:
-            ratingMap[row[0]] = row[1]
-            
-        return ratingMap
-        
-    def getUserRatingsForAnime(self, animeId):
-        """
-        Returns a dictionary mapping userIds to ratings for a particular anime
-        
-        Arguments:
-        animeId - the id of the anime to getting user ratings for
-        """
-        
-        c = self.conn.cursor()
-        c.execute("select userId, rating from ratings where animeId=? and rating <> 0", (animeId,))
-        
-        ratingMap = {}
-        
-        for row in c:
-            ratingMap[row[0]] = row[1]
-            
-        return ratingMap
-        
-    def getRatingsMatrix(self):
-        """
-        Returns a multi-dimensional dictionary mapping a user and anime to the
-        respective rating
-        """
-        
-        c = self.conn.cursor()
-        c.execute("select userId, animeId, rating from ratings where rating <> 0")
-        
-        ratingMap = {}
-        
-        for row in c:
-            userId = row[0]
-            animeId = row[1]
-            rating = row[2]
-            
-            if userId not in ratingMap:
-                ratingMap[userId] = {}
-
-            ratingMap[userId][animeId] = rating
-
-        return ratingMap
-
 class MemReader:
     """
     A memory reader for the sqlite3 database. It reads data from the database 
     and stores a copy in memory, which can then be quickly accessed without 
     accessing the hard drive. This does mean that changes made afterward to the
-    database are not viewable from the memory reader, so this should only be 
-    used when several accesses on a snapshot of the database is required. 
-    The reader supports all non-write operations of MalDB.
+    database are not viewable from the memory reader.
+
+    Also, anime and users are typically referred to their index in the 
+    list of animes and users, rather than the UID of the site. This makes
+    it easier to construct the ratings matrix.
     """
 
     def __init__(self, dbName):
@@ -174,7 +60,8 @@ class MemReader:
 
         # Read all ratings triples
         c = conn.cursor()
-        c.execute("select userId, animeId, rating from ratings where rating <> 0")
+        c.execute("select userId, animeId, rating from ratings where rating \
+                   <> 0")
 
         ratingTriples = [(row[0], row[1], row[2]) for row in c]
         c.close()

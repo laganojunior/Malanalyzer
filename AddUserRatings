@@ -8,7 +8,7 @@ from standard input.
 If dbFilename is not provided then Mal.db is used
 """
 
-from MalDB import MalDB
+from MalDB import DBWriter
 from CleanText import replaceUnicode, unescapeHtml
 import WebGrab
 import sys
@@ -30,7 +30,7 @@ if len(sys.argv) == 2:
 else:
     filename = sys.argv[2]
    
-db = MalDB(filename)
+db = DBWriter(filename)
 DataAdd.addUserData(username, db)
 db.saveChanges()
 

@@ -12,7 +12,7 @@ used.
 
 import WebGrab
 import DataAdd
-from MalDB import MalDB
+from MalDB import DBWriter
 import sys
 import time
 
@@ -28,7 +28,7 @@ if len(sys.argv) == 3:
 else:
     dbFilename = "Mal.db"
 
-db = MalDB(dbFilename)
+db = DBWriter(dbFilename)
 
 while True:
     try:
