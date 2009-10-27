@@ -1,5 +1,6 @@
 import sqlite3
 from Bimap import Bimap
+import pysparse
 
 class DBWriter:
     """
@@ -40,79 +41,99 @@ class MemReader:
     def __init__(self, dbName):
         conn = sqlite3.connect(dbName)
                 
-        # Read the anime id bimap
+        # Read the anime ids and names 
         c = conn.cursor()
         c.execute("select id, name from animeIds")
 
-        animeIdPairs = [(row[0], row[1]) for row in c]
-        self.animeIdMap = Bimap(animeIdPairs, enforceBijection = False)
-        self.animeIds = [pair[0] for pair in animeIdPairs]
+        animeIdStrings = [(row[0], row[1]) for row in c]
+        animeIdIndices = [(pair[0], i) for i, pair in\
+                           enumerate(animeIdStrings)]
+        animeStringMap = Bimap(animeIdStrings, enforceBijection = False)
+        animeIndexMap = Bimap(animeIdIndices, enforceBijection = False)
         c.close()
 
-        # Read the user id bimap
+        # Read the user ids and names
         c = conn.cursor()
         c.execute("select id, name from userIds")
 
-        userIdPairs = [(row[0], row[1]) for row in c]
-        self.userIdMap = Bimap(userIdPairs, enforceBijection = False)
-        self.userIds = [pair[0] for pair in userIdPairs]
+        userIdStrings = [(row[0], row[1]) for row in c]
+        userIdIndices = [(pair[0], i) for i, pair in\
+                           enumerate(userIdStrings)]
+        userStringMap = Bimap(userIdStrings, enforceBijection = False)
+        userIndexMap = Bimap(userIdIndices, enforceBijection = False)
         c.close()
 
-        # Read all ratings triples
+        # Read all ratings triples and feed them into the matrix
         c = conn.cursor()
         c.execute("select userId, animeId, rating from ratings where rating \
                    <> 0")
 
-        ratingTriples = [(row[0], row[1], row[2]) for row in c]
+        self.ratingsMatrix = pysparse.spmatrix.ll_mat(len(userIdStrings),
+                                                      len(animeIdStrings))
+        for row in c:
+            userId = row[0]
+            animeId = row[1]
+            rating = row[2]
+            
+            userIndex  = userIndexMap.value(userId)
+            animeIndex = animeIndexMap.value(animeId)
+            self.ratingsMatrix[userIndex, animeIndex] = rating
+            
         c.close()
 
-        # Convert the ratings triples to the desired mappings
-        self.userRatingMap = {}
-        self.animeRatingMap = {}
+        # Now create a bimap between indices and names directly, so that
+        # the ids are no longer needed.
+        userIndexStrings = [(index, userStringMap.value(\
+                                    userIndexMap.key(index)))\
+                            for index in range(len(userIdStrings))]
 
-        for (userId, animeId, rating) in ratingTriples:
-            if userId not in self.userRatingMap:
-                self.userRatingMap[userId] = {}
+        animeIndexStrings = [(index, animeStringMap.value(\
+                              animeIndexMap.key(index)))\
+                            for index in range(len(animeIdStrings))]
 
-            self.userRatingMap[userId][animeId] = rating
+        self.userMap = Bimap(userIndexStrings, enforceBijection = False)
+        self.animeMap = Bimap(animeIndexStrings, enforceBijection = False)
+        self.numUsers = len(userIdStrings)
+        self.numAnime = len(animeIdStrings)
 
-            if animeId not in self.animeRatingMap:
-                self.animeRatingMap[animeId] = {}
-            
-            self.animeRatingMap[animeId][userId] = rating
 
-    def getUserId(self, username):
-        return self.userIdMap.key(username)
+    def getUserIndex(self, username):
+        return self.userMap.key(username)
         
-    def getAnimeId(self, animename):
-        return self.animeIdMap.key(animename)
+    def getAnimeIndex(self, animename):
+        return self.animeMap.key(animename)
         
-    def getAllUserIds(self):
-        return self.userIds
+    def getNumUsers(self):
+        return self.numUsers
         
-    def getAllAnimeIds(self):
-        return self.animeIds
+    def getNumAnime(self):
+        return self.numAnime
 
-    def getUserName(self, userId):
-        return self.userIdMap.value(userId)
+    def getUserName(self, userIndex):
+        return self.userMap.value(userIndex)
         
-    def getAnimeName(self, animeId):
-        return self.animeIdMap.value(animeId)
+    def getAnimeName(self, animeIndex):
+        return self.animeMap.value(animeIndex)
 
-    def getAnimeRatingsForUser(self, userId):
-        if userId not in self.userRatingMap:
-            return {}
-
-        return self.userRatingMap[userId]
+    def getAnimeRatingsForUser(self, userIndex):
+        userMat = self.ratingsMatrix[userIndex, :]
         
-    def getUserRatingsForAnime(self, animeId):
-        if animeId not in self.animeRatingMap:
-            return {}
+        nonZeroRatings = [(col, rating) for ((row, col), rating) in\
+                          userMat.items()]
+ 
+        return dict(nonZeroRatings) 
 
-        return self.animeRatingMap[animeId]
+
+    def getUserRatingsForAnime(self, animeIndex):
+        animeMat = self.ratingsMatrix[:, animeIndex]
         
+        nonZeroRatings = [(row, rating) for ((row, col), rating) in\
+                          animeMat.items()]
+
+        return dict(nonZeroRatings)
+ 
     def getRatingsMatrix(self):
-        return self.userRatingMap
+        return self.ratingsMatrix
 
 
     
