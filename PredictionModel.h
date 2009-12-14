@@ -14,10 +14,12 @@ class PredictionModel
                        const vector<vector <unsigned int> > & uToV,
                        const vector<vector <unsigned int> > & vToU) = 0;
     virtual double predict(unsigned int u, unsigned int v) = 0;
-    virtual double RMSE(const vector<vector <double> >& mat,
-                        const vector<vector <double> >& matT,
-                        const vector<vector <unsigned int> > & uToV,
-                        const vector<vector <unsigned int> > & vToU) = 0;
+
+
+    double RMSE(const vector<vector <double> >& mat,
+                const vector<vector <double> >& matT,
+                const vector<vector <unsigned int> > & uToV,
+                const vector<vector <unsigned int> > & vToU);
 
 }; 
 

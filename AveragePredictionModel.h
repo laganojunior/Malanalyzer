@@ -16,11 +16,7 @@ class AveragePredictionModel: public PredictionModel
                        const vector<vector <unsigned int> >& uToV,
                        const vector<vector <unsigned int> >& vToU);
     virtual double predict(unsigned int u, unsigned int v);
-    virtual double RMSE(const vector<vector <double> >& mat,
-                        const vector<vector <double> >& matT,
-                        const vector<vector <unsigned int> >& uToV,
-                        const vector<vector <unsigned int> >& vToU);
-    
+   
     private:
     double globalAverage;
     vector<double> uAverages;
