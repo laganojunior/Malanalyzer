@@ -11,6 +11,21 @@ void AveragePredictionModel :: train(const vector<vector <double> >& mat,
                                      const vector<vector <unsigned int> >& uToV,
                                      const vector<vector <unsigned int> >& vToU)
 {
+    // Get the global average
+    double globalAvg = 0;
+    int numRatings = 0;
+
+    for (int i = 0; i < mat.size(); i++)
+    {
+        for (int j = 0; j < mat[i].size(); j++)
+        {
+            globalAvg += mat[i][j];
+            numRatings += 1;
+        }
+    }
+
+    globalAvg /= numRatings;
+
     // For each u, get the means of ratings 
     uAverages.resize(uToV.size());
 
@@ -24,7 +39,10 @@ void AveragePredictionModel :: train(const vector<vector <double> >& mat,
             ratingSum       += rating;
         }
         
-        uAverages[u] = ratingSum / uToV[u].size();
+        if (uToV[u].size() > 0) 
+            uAverages[u] = ratingSum / uToV[u].size();
+        else
+            uAverages[u] = globalAvg;
     }    
 
     vAverages.resize(vToU.size());
@@ -38,7 +56,10 @@ void AveragePredictionModel :: train(const vector<vector <double> >& mat,
             ratingSum += matT[v][i];
         }
     
-        vAverages[v] = ratingSum / vToU[v].size();
+        if (vToU[v].size() > 0)
+            vAverages[v] = ratingSum / vToU[v].size();
+        else
+            vAverages[v] = globalAvg;
     }
     
 }
