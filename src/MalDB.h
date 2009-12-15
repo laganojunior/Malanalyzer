@@ -9,6 +9,8 @@
 #include <map>
 #include <sqlite3.h>
 
+#include "Matrix.h"
+
 using namespace std;
 
 class MalDBReader 
@@ -21,7 +23,7 @@ class MalDBReader
     unsigned int getAnimeId(const string& name);
 
     unsigned int getNumUsers();
-    unsigned int getAnimeUsers();
+    unsigned int getNumAnime();
         
     string& getUserName(unsigned int userId);
     string& getAnimeName(unsigned int userId);
@@ -38,6 +40,8 @@ class MalDBReader
     const vector<vector <unsigned int> >& getAnimeRatedList();
     const vector<vector <unsigned int> >& getUserRatersList();
 
+    const Matrix& getMatrix();
+
     private:
     sqlite3 * dbConn;
 
@@ -49,7 +53,8 @@ class MalDBReader
 
 	vector<vector<unsigned int> > animeToUserRated;
 	vector<vector<double> > ratingsMatrixTranspose;
-    
+
+    Matrix matrix;    
 };
 
 #endif

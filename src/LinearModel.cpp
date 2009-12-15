@@ -16,10 +16,8 @@ void LinearModel :: setRegularizationParameter(double regularize)
     this -> regularize = regularize;
 }
 
-void LinearModel :: train(const vector<vector <double> >& mat,
-                          const vector<vector <double> >& matT,
-                          const vector<vector <unsigned int> >& uToV,
-                          const vector<vector <unsigned int> >& vToU)
+
+void LinearModel :: train(const Matrix& trainingM)
 {
     
 

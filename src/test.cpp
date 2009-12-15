@@ -1,6 +1,8 @@
 #include "MalDB.h"
 #include <assert.h>
 #include "AveragePredictionModel.h"
+#include "LinearModel.h"
+#include "Matrix.h"
 
 int main() 
 {
@@ -29,13 +31,12 @@ int main()
 
     AveragePredictionModel model;
 
-    model.train(db.getRatingsMatrix(), db.getRatingsMatrixTranspose(),
-                db.getAnimeRatedList(), db.getUserRatersList());
+    Matrix trainingMatrix = db.getMatrix();
+    Matrix testMatrix     = db.getMatrix();
+ 
+    model.train(trainingMatrix);
     
-    cout << "RMSE is " << model.RMSE(db.getRatingsMatrix(),
-                                     db.getRatingsMatrixTranspose(),
-                                     db.getAnimeRatedList(),
-                                     db.getUserRatersList()) << endl;
+    cout << "RMSE is " << model.RMSE(testMatrix) << endl;
 
 	cout << "hello" << endl;
     return 0;

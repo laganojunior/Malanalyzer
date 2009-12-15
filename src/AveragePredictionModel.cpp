@@ -6,62 +6,68 @@ AveragePredictionModel :: ~AveragePredictionModel()
 
 }
 
-void AveragePredictionModel :: train(const vector<vector <double> >& mat,
-                                     const vector<vector <double> >& matT,
-                                     const vector<vector <unsigned int> >& uToV,
-                                     const vector<vector <unsigned int> >& vToU)
+void AveragePredictionModel :: train(const Matrix& trainingM)
 {
     // Get the global average
     double globalAvg = 0;
     int numRatings = 0;
 
-    for (int i = 0; i < mat.size(); i++)
+    for (int i = 0; i < trainingM.mat.size(); i++)
     {
-        for (int j = 0; j < mat[i].size(); j++)
+        for (int j = 0; j < trainingM.mat[i].size(); j++)
         {
-            globalAvg += mat[i][j];
+            globalAvg += trainingM.mat[i][j];
             numRatings += 1;
         }
     }
 
     globalAvg /= numRatings;
 
-    // For each u, get the means of ratings 
-    uAverages.resize(uToV.size());
+    // Create memory for the averages
+    uAverages.resize(trainingM.numU);
+    vAverages.resize(trainingM.numV);
 
-    for (int u = 0; u < uToV.size(); u++)
+    // Set all the column averages to 0. This will be used as an
+    // accumulation for the sum of columns
+    for (int i = 0; i < trainingM.numV; i++)
     {
-        double ratingSum = 0;
-        for (int i = 0; i < uToV[u].size(); i++)
-        {
+        vAverages[i] = 0.0;
+    }
 
-            double rating = mat[u][i];
+    // Count of ratings per column to easily take the average
+    vector<int> vCount;
+    vCount.resize(trainingM.numV);
+
+    // Go through each row
+    for (int u = 0; u < trainingM.uToV.size(); u++)
+    {
+        // Sum up the row to get the row averages
+        double ratingSum = 0;
+        for (int i = 0; i < trainingM.uToV[u].size(); i++)
+        {
+            double rating = trainingM.mat[u][i];
             ratingSum       += rating;
+
+            // Add up this value to its column sum
+            vAverages[trainingM.uToV[u][i]] += trainingM.mat[u][i];
+            vCount[trainingM.uToV[u][i]] ++;
         }
-        
-        if (uToV[u].size() > 0) 
-            uAverages[u] = ratingSum / uToV[u].size();
+       
+        if (trainingM.uToV[u].size() > 0) 
+            uAverages[u] = ratingSum / trainingM.uToV[u].size();
         else
             uAverages[u] = globalAvg;
     }    
 
-    vAverages.resize(vToU.size());
-
-    // Similarly for each v, get the means of ratings
-    for (int v = 0; v < vToU.size(); v++)
+    // Post process the column sums to get the column averages
+    for (int i = 0; i < trainingM.numV; i++)
     {
-        double ratingSum = 0;
-        for (int i = 0; i < vToU[v].size(); i++)
-        {
-            ratingSum += matT[v][i];
-        }
-    
-        if (vToU[v].size() > 0)
-            vAverages[v] = ratingSum / vToU[v].size();
+        if (vCount[i] > 0)
+            vAverages[i] /= vCount[i];
         else
-            vAverages[v] = globalAvg;
+            vAverages[i] = globalAvg;
     }
-    
+   
 }
 
 double AveragePredictionModel :: predict(unsigned int u, unsigned int v)

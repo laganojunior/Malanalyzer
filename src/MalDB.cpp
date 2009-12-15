@@ -84,7 +84,9 @@ MalDBReader :: MalDBReader(string filename)
     }
 
 	sqlite3_free_table(results);
-	
+
+    matrix = Matrix(ratingsMatrix, userToAnimeRated, 
+                    getNumUsers(), getNumAnime());
 }
 
 MalDBReader :: ~MalDBReader()
@@ -119,7 +121,7 @@ unsigned int MalDBReader :: getNumUsers()
 	return usernames.size();
 }
 
-unsigned int MalDBReader :: getAnimeUsers()
+unsigned int MalDBReader :: getNumAnime()
 {
 	return animenames.size();
 }
@@ -173,4 +175,9 @@ const vector<vector <unsigned int> >& MalDBReader :: getAnimeRatedList()
 const vector<vector <unsigned int> >& MalDBReader :: getUserRatersList()
 {
     return animeToUserRated;
+}
+
+const Matrix& MalDBReader :: getMatrix()
+{
+    return matrix;
 }

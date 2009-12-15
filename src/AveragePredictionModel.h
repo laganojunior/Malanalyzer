@@ -10,13 +10,9 @@ class AveragePredictionModel: public PredictionModel
 {
     public:
     virtual ~AveragePredictionModel();
-
-    virtual void train(const vector<vector <double> >& mat,
-                       const vector<vector <double> >& matT,
-                       const vector<vector <unsigned int> >& uToV,
-                       const vector<vector <unsigned int> >& vToU);
+    virtual void train(const Matrix& trainingM);
     virtual double predict(unsigned int u, unsigned int v);
-   
+
     private:
     double globalAverage;
     vector<double> uAverages;
