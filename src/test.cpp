@@ -31,8 +31,12 @@ int main()
 
     AveragePredictionModel model;
 
-    Matrix trainingMatrix = db.getMatrix();
-    Matrix testMatrix     = db.getMatrix();
+    Matrix fullMatrix = db.getMatrix();
+    
+    Matrix trainingMatrix;
+    Matrix testMatrix;
+
+    fullMatrix.randomSplit(.95, trainingMatrix, testMatrix);
  
     model.train(trainingMatrix);
     
