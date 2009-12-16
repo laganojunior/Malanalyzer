@@ -244,10 +244,11 @@ void LinearModel :: train(const Matrix& trainingM)
             cout << "Minimum found" << endl;
     } while (status == GSL_CONTINUE);
 
-    gsl_multimin_fdfminimizer_free(minimizer);
     
 
     // Set u and v vecs
+
+    gsl_vector * newX = minimizer -> x;
 
     uVecs.resize(trainingM.numU);
 
@@ -257,7 +258,7 @@ void LinearModel :: train(const Matrix& trainingM)
 
         for (int j = 0; j < numFactors; j++)
         {
-            uVecs[i][j] = gsl_vector_get(x, i * numFactors + j);
+            uVecs[i][j] = gsl_vector_get(minimizer->x, i * numFactors + j);
         }
     }
 
@@ -270,11 +271,12 @@ void LinearModel :: train(const Matrix& trainingM)
 
         for (int j = 0; j < numFactors; j++)
         {
-            vVecs[i][j] = gsl_vector_get(x, (i + trainingM.numU) 
-                                            * numFactors + j);
+            vVecs[i][j] = gsl_vector_get(minimizer->x, (i + trainingM.numU) 
+                                                        * numFactors + j);
         }
     } 
 
+    gsl_multimin_fdfminimizer_free(minimizer);
     gsl_vector_free(x);
 }
 
