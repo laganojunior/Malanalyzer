@@ -10,8 +10,8 @@ if len(sys.argv) < 2:
 else:
     targetname = sys.argv[1]
 
-releaseflags  = "-lsqlite3 -O2 -pipe -march=native"
-debugflags    = "-lsqlite3 -O2 -pg -fno-inline -pipe -march=native"
+releaseflags  = "-lsqlite3 -lgsl -lgslcblas -O2 -pipe -march=native"
+debugflags    = "-lsqlite3 -lgsl -lgslcblas -O2 -pg -fno-inline -pipe -march=native"
 headers = []
 sources = []
 sources_suffix = []

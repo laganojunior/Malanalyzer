@@ -16,8 +16,29 @@ int main()
     MalDBReader db(string("Mal.db"));
 
     int userId = db.getUserId("lelouch9178");
+
+   
+    for (int i = 0; i < db.getNumUsers(); i++)
+    {
+        const vector<unsigned int>& list = db.getAnimeRated(i);
+    
+        for (int j = 0; j < list.size(); j++)
+        {
+            assert(list[j] < db.getNumAnime());
+        }
+    }
+    
+    for (int i = 0; i < db.getNumAnime(); i++)
+    {
+        const vector<unsigned int>& list = db.getUserRaters(i);
+    
+        for (int j = 0; j < list.size(); j++)
+        {
+            assert(list[j] < db.getNumUsers());
+        }
+    }     
 	
-    AveragePredictionModel model;
+    LinearModel model(3, 0.0);
 
     Matrix fullMatrix = db.getMatrix();
 
@@ -32,7 +53,7 @@ int main()
         Matrix testMatrix;
 
         fullMatrix.randomSplit(trainingRatio, trainingMatrix, testMatrix);
-     
+
         model.train(trainingMatrix);
 
         rmseSum += model.RMSE(testMatrix);

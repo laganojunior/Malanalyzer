@@ -20,13 +20,16 @@ class LinearModel: public PredictionModel
     void setNumFactors(int numFactors);
     void setRegularizationParameter(double regularize);
 
-    virtual void train(const Matrix& trainingM) = 0;
+    virtual void train(const Matrix& trainingM);
     virtual double predict(unsigned int u, unsigned int v);
     
     private:
 
     int numFactors;
     double regularize;
+
+    vector<vector<double> > uVecs;
+    vector<vector<double> > vVecs;
 };
 
 #endif
