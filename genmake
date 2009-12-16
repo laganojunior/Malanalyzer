@@ -6,7 +6,7 @@ import string
 import sys
 
 if len(sys.argv) < 2:
-    targetname = "test"
+    targetname = "LinearModel"
 else:
     targetname = sys.argv[1]
 
