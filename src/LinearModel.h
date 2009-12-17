@@ -24,13 +24,12 @@ class LinearModel: public PredictionModel
 
     virtual void train(const Matrix& trainingM);
     virtual double predict(unsigned int u, unsigned int v);
-    
-    private:
-
+ 
     int numFactors;
     double regularize;
     double gradTol;
 
+    private:
     vector<vector<double> > uVecs;
     vector<vector<double> > vVecs;
     double globalAvg;

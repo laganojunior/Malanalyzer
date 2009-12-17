@@ -175,6 +175,12 @@ int main()
             
             model.setGradientTolerance(gradTol);
         } 
+        else if (parts[0] == "showParams")
+        {
+            cout << "Num Factors " << model.numFactors << endl;
+            cout << "Regularization Parameter " << model.regularize << endl;
+            cout << "Gradient Tolerance " << model.gradTol << endl;
+        }
         else if (parts[0] == "help")
         {
             cout << "Commands Summary\n";
@@ -191,6 +197,7 @@ int main()
                  << "                    in each feature vector\n";
             cout << "setGradTol tol - Set the gradient tolerance for\n"
                  << "                 stopping minimization\n";
+            cout << "showParams - print the values of the model parameters\n";
         }
         else
         {
