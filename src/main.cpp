@@ -94,6 +94,9 @@ int main()
 
         vector<string> parts = stringSplit(line);
 
+        if (parts.size() == 0)
+            continue;
+
         if (parts[0] == "quit")
             break;
         else if (parts[0] == "trainFull")
@@ -129,6 +132,18 @@ int main()
    
             printRecommendations(model, db, name, num);
         } 
+        else if (parts[0] == "setRegularize")
+        {
+            if (parts.size() < 2)
+            {
+                cout << "Expected 1 argument. See help\n";
+                continue;
+            }
+
+            double regularize = atof(parts[1].c_str());
+            
+            model.setRegularizationParameter(regularize);
+        }
         else if (parts[0] == "help")
         {
             cout << "Commands Summary\n";
@@ -140,6 +155,7 @@ int main()
                  << "                       not modify the current model\n";
             cout << "recommend username num - print the highest recommended\n"
                  << "                         anime for some user\n";
+            cout << "setRegularize p - Set the regularization parameter\n";
         }
         else
         {
