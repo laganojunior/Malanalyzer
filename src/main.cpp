@@ -162,6 +162,18 @@ int main()
             
             model.setNumFactors(numFactors);
         }
+        else if (parts[0] == "setGradTol")
+        {
+            if (parts.size() < 2)
+            {
+                cout << "Expected 1 argument. See help\n";
+                continue;
+            }
+
+            double gradTol = atof(parts[1].c_str());
+            
+            model.setGradientTolerance(gradTol);
+        } 
         else if (parts[0] == "help")
         {
             cout << "Commands Summary\n";
@@ -176,6 +188,8 @@ int main()
             cout << "setRegularize p - Set the regularization parameter\n";
             cout << "setNumFactors num - Set the number of linear factors\n"
                  << "                    in each feature vector\n";
+            cout << "setGradTol tol - Set the gradient tolerance for\n"
+                 << "                 stopping minimization\n";
         }
         else
         {

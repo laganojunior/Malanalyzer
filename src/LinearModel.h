@@ -13,12 +13,14 @@ class LinearModel: public PredictionModel
     {
         this -> numFactors = numFactors;    
         this -> regularize = regularize;
+        gradTol = 1e-3;
     }
 
     virtual ~LinearModel();
 
     void setNumFactors(int numFactors);
     void setRegularizationParameter(double regularize);
+    void setGradientTolerance(double gradTol);
 
     virtual void train(const Matrix& trainingM);
     virtual double predict(unsigned int u, unsigned int v);
@@ -27,6 +29,7 @@ class LinearModel: public PredictionModel
 
     int numFactors;
     double regularize;
+    double gradTol;
 
     vector<vector<double> > uVecs;
     vector<vector<double> > vVecs;

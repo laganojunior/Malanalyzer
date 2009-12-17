@@ -232,6 +232,10 @@ void LinearModel :: setRegularizationParameter(double regularize)
     this -> regularize = regularize;
 }
 
+void LinearModel :: setGradientTolerance(double gradTol)
+{
+    this -> gradTol = gradTol;
+}
 
 void LinearModel :: train(const Matrix& trainingM)
 {
@@ -273,7 +277,6 @@ void LinearModel :: train(const Matrix& trainingM)
 
     gsl_multimin_fdfminimizer_set(minimizer, &objFunc, x, .01, 1e-3);
 
-    double gradQuitTol = .01;
     int iter = 0; 
     int status;
     do
@@ -287,7 +290,7 @@ void LinearModel :: train(const Matrix& trainingM)
             break;
         }
 
-        status = gsl_multimin_test_gradient(minimizer->gradient, gradQuitTol);
+        status = gsl_multimin_test_gradient(minimizer->gradient, gradTol);
    
         cout << iter << "\t" << minimizer->f << "\t" << endl; 
         if (status == GSL_SUCCESS)
