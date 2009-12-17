@@ -130,11 +130,30 @@ void printRecommendations(LinearModel& model, MalDBReader& db,
 
     sort(animePredicts.begin(), animePredicts.end());
 
+    const vector<unsigned int>& rated = db.getAnimeRated(userId);
+
     for (int i = 0; i < num; i++)
     {
         int j = db.getNumAnime() - i - 1;
 
-        cout << db.getAnimeName(animePredicts[j].second) 
+        int animeId = animePredicts[j].second;
+
+        // Avoid anything the user has already rated
+        bool found = false;
+        for (int k = 0; k < rated.size(); k++)
+        {
+            if (rated[k] == animeId)
+            {
+                found = true;
+                break;
+            }
+        }
+        if (found)
+        {
+            num++; 
+            continue;
+        } 
+        cout << db.getAnimeName(animeId) 
              << " " <<  animePredicts[j].first << endl;
     }
 }
