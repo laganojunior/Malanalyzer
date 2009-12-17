@@ -144,6 +144,24 @@ int main()
             
             model.setRegularizationParameter(regularize);
         }
+        else if (parts[0] == "setNumFactors")
+        {
+            if (parts.size() < 2)
+            {
+                cout << "Expected 1 argument. See help\n";
+                continue;
+            }
+
+            int numFactors = atoi(parts[1].c_str());
+            
+            if (numFactors < 1)
+            {
+                cout << "Number of factors must be at least 1" << endl;
+                continue;
+            }
+            
+            model.setNumFactors(numFactors);
+        }
         else if (parts[0] == "help")
         {
             cout << "Commands Summary\n";
@@ -156,6 +174,8 @@ int main()
             cout << "recommend username num - print the highest recommended\n"
                  << "                         anime for some user\n";
             cout << "setRegularize p - Set the regularization parameter\n";
+            cout << "setNumFactors num - Set the number of linear factors\n"
+                 << "                    in each feature vector\n";
         }
         else
         {
