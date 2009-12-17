@@ -2,6 +2,7 @@
 #include "gsl/gsl_multimin.h"
 #include <math.h>
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 
@@ -343,3 +344,78 @@ double LinearModel :: predict(unsigned int u, unsigned int v)
 
     return score;
 }
+
+   
+void LinearModel :: save(ostream& out)
+{
+    out << numFactors << " " << regularize << " " << gradTol << " "
+        << globalAvg << endl;
+
+    out << uVecs.size() << endl;
+
+    for (int i = 0; i < uVecs.size(); i++)
+    {
+        out << uVecs[i][0];
+
+        for (int j = 1; j < numFactors; j++)
+        {
+            out << " " << uVecs[i][j];
+        }
+
+        out << endl;
+    } 
+
+    out << vVecs.size() << endl;
+     
+    for (int i = 0; i < vVecs.size(); i++)
+    {
+        out << vVecs[i][0];
+
+        for (int j = 1; j < numFactors; j++)
+        {
+            out << " " << vVecs[i][j];
+        }
+
+        out << endl;
+    } 
+
+}
+
+void LinearModel :: load(istream& in)
+{
+    string line;
+
+    in >> numFactors >> regularize >> gradTol >> globalAvg;
+
+    // Read in the u vectors 
+    int numU;
+    in >> numU;
+
+    uVecs.resize(numU);
+
+    for (int i = 0; i < numU; i++)
+    {
+        uVecs[i].resize(numFactors);
+        
+        for (int j = 0; j < numFactors; j++)
+        {
+            in >> uVecs[i][j];
+        }
+    }
+
+    // Read in the v vectors
+    int numV; 
+    in >> numV;
+
+    vVecs.resize(numV);
+    for (int i = 0; i < numV; i++)
+    {
+        vVecs[i].resize(numFactors);
+
+        for (int j = 0; j < numFactors; j++)
+        {
+            in >> vVecs[i][j];
+        }
+    } 
+}
+ 

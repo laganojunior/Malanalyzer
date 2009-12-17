@@ -3,6 +3,7 @@
 
 #include "PredictionModel.h"
 #include <vector>
+#include <iostream>
 
 using namespace std;
 
@@ -24,6 +25,9 @@ class LinearModel: public PredictionModel
 
     virtual void train(const Matrix& trainingM);
     virtual double predict(unsigned int u, unsigned int v);
+
+    void save(ostream& out);
+    void load(istream& in);
  
     int numFactors;
     double regularize;

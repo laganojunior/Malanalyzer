@@ -7,6 +7,7 @@
 #include <utility>
 #include <algorithm>
 #include <sstream>
+#include <fstream>
 
 using namespace std;
 
@@ -267,6 +268,36 @@ int main()
             cout << "Regularization Parameter set to " << optRegularize 
                  << endl; 
         }
+        else if (parts[0] == "new")
+        {
+            model = LinearModel(3, 0.0);
+        }
+        else if (parts[0] == "load")
+        {
+            if (parts.size() < 2)
+            {
+                cout << "Expected 1 argument. See help\n";
+                continue;
+            }
+
+            string filename = parts[1];
+            ifstream inFile(filename.c_str());
+            model.load(inFile);
+            inFile.close(); 
+        } 
+        else if (parts[0] == "save")
+        {
+            if (parts.size() < 2)
+            {
+                cout << "Expected 1 argument. See help\n";
+                continue;
+            }
+
+            string filename = parts[1];
+            ofstream outFile(filename.c_str());
+            model.save(outFile);
+            outFile.close(); 
+        } 
         else if (parts[0] == "help")
         {
             cout << "Commands Summary\n";
@@ -294,11 +325,18 @@ int main()
             cout << "optRegularize ratio num start end tol\n"
                  << "\tFinds the optimal regularization parameter by a line\n"
                  << "\tsearch\n\n";
+            cout << "new\n"
+                 << "\tResets the model to default parameters\n\n";
+            cout << "load filename\n"
+                 << "\tLoads the model from a file\n\n";
+            cout << "save filename\n"
+                 << "\tSaves the model to a file\n\n";
         }
         else
         {
             cout << "Unrecognized command. See help\n";
         }
     } 
+
     return 0;
 }
