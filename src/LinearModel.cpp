@@ -60,7 +60,7 @@ double errorFunc(const gsl_vector * x, void * params)
 
     for (int i = 0; i < length; i++)
     {
-        error += xVec[i] * xVec[i] * regularize;
+        error += xVec[i] * xVec[i] * regularize / length;
     }
 
     return error;
@@ -132,7 +132,7 @@ void gradientFunc(const gsl_vector * x, void * params, gsl_vector * g)
 
     for (int i = 0; i < length; i++)
     {
-        gVec[i] += 2 * xVec[i] * regularize;
+        gVec[i] += 2 * xVec[i] * regularize / length;
     }
 } 
 
@@ -206,8 +206,8 @@ void errorAndGrad(const gsl_vector * x, void * params, double * f,
 
     for (int i = 0; i < length; i++)
     {
-        error += xVec[i] * xVec[i] * regularize;
-        gVec[i] += 2 * xVec[i] * regularize;
+        error += xVec[i] * xVec[i] * regularize / length;
+        gVec[i] += 2 * xVec[i] * regularize / length;
     }
 
     *f = error;
