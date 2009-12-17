@@ -34,9 +34,11 @@ double trainCrossValidate(LinearModel model, Matrix& fullMatrix, double ratio,
 {
 
     double rmseSum = 0;
-   
+  
     for (int i = 0; i < numTries; i++)
     {
+        cout << i + 1 << " out of " << numTries << endl;
+
         Matrix trainingMatrix;
         Matrix testMatrix;
 
@@ -50,6 +52,67 @@ double trainCrossValidate(LinearModel model, Matrix& fullMatrix, double ratio,
 
     return rmseSum / numTries;
 }
+
+double lineSearchRegularize(LinearModel model, Matrix& fullMatrix, double ratio,
+                            int numTries, double start, double end, double tol)
+{
+    double currStep = (end - start) / 10;
+
+    while ((end - start) / 2 > tol)
+    {
+        cout << "\n\n Starting on window (" << start << ", " << end << ")\n\n";
+
+        // Evaluate until a min v structure is found
+        double prevE2, prevE, currE;
+
+        cout << "On " << start << endl;
+        model.setRegularizationParameter(start);
+        prevE2 = trainCrossValidate(model, fullMatrix, ratio, numTries);
+        cout << "Error is " << prevE2 << endl;
+
+        cout << "On " << start + currStep << endl;
+        model.setRegularizationParameter(start + currStep);
+        prevE = trainCrossValidate(model, fullMatrix, ratio, numTries);
+        cout << "Error is " << prevE << endl;
+
+        double currR = start + currStep * 2;
+
+        if (prevE < prevE2)
+        { 
+            cout << "On " << start + currStep * 2<< endl;
+            model.setRegularizationParameter(start + currStep * 2);
+            currE = trainCrossValidate(model, fullMatrix, ratio, numTries);
+            cout << "Error is " << currE << endl;
+
+            while ( (! (prevE2 >= prevE) && (prevE <= currE)) &&
+                    currR < end)
+            {
+                prevE2 = prevE;
+                prevE = currE;
+                
+                currR += currStep;
+
+                cout << "On " << currR << endl;
+                model.setRegularizationParameter(currR);
+                currE = trainCrossValidate(model, fullMatrix, ratio, numTries);
+                
+                cout << "Error is " << currE << endl;
+            }
+        }
+
+        double minR = currR - currStep; //Backtrack 1 step to get low point of v
+
+        // Make new window
+        start = minR - currStep;
+        end = minR + currStep;
+        currStep /= 10;
+    }
+
+    // After the line search is done to some window, return the midpoint
+    return (start + end) / 2;
+    
+}
+
 
 void printRecommendations(LinearModel& model, MalDBReader& db,
                           string username, int num)
@@ -181,23 +244,56 @@ int main()
             cout << "Regularization Parameter " << model.regularize << endl;
             cout << "Gradient Tolerance " << model.gradTol << endl;
         }
+        else if (parts[0] == "optRegularize")
+        {
+            if (parts.size() < 6)
+            {
+                cout << "Expected 5 arguments. See help\n";
+                continue;
+            }
+
+            double ratio = atof(parts[1].c_str());
+            int numTries = atoi(parts[2].c_str());
+
+            double start = atof(parts[3].c_str());
+            double end = atof(parts[4].c_str());
+            double tol = atof(parts[5].c_str());
+                
+            double optRegularize = lineSearchRegularize(model, fullMatrix, 
+                                                        ratio, numTries,
+                                                        start, end, tol);
+            model.setRegularizationParameter(optRegularize);
+
+            cout << "Regularization Parameter set to " << optRegularize 
+                 << endl; 
+        }
         else if (parts[0] == "help")
         {
             cout << "Commands Summary\n";
-            cout << "quit - quit the program\n";
-            cout << "help - prints this help statement\n";
-            cout << "trainFull - train on the full matrix\n";
-            cout << "trainCross ratio num - run cross validation tests \n"
-                 << "                       and print the test RMSE. Does\n"
-                 << "                       not modify the current model\n";
-            cout << "recommend username num - print the highest recommended\n"
-                 << "                         anime for some user\n";
-            cout << "setRegularize p - Set the regularization parameter\n";
-            cout << "setNumFactors num - Set the number of linear factors\n"
-                 << "                    in each feature vector\n";
-            cout << "setGradTol tol - Set the gradient tolerance for\n"
-                 << "                 stopping minimization\n";
-            cout << "showParams - print the values of the model parameters\n";
+            cout << "quit\n"
+                 << "\tquit the program\n\n";
+            cout << "help\n"
+                 << "\tprints this help statement\n\n";
+            cout << "trainFull\n"
+                 << "\ttrain on the full matrix\n\n";
+            cout << "trainCross ratio num\n"
+                 << "\trun cross validation test and print the test RMSE.\n"
+                 << "\tDoes not modify the current model\n\n";
+            cout << "recommend username num\n"
+                 << "\tprint the highest recommended anime for some user\n\n";
+            cout << "setRegularize p\n"
+                 << "\tSet the regularization parameter\n\n";
+            cout << "setNumFactors num\n"
+                 << "\tSet the number of linear factors in each feature\n"
+                 << "\tvector\n\n";
+            cout << "setGradTol tol\n"
+                 << "\tSet the gradient tolerance for stopping\n"
+                 << "\tminimization\n\n";
+            cout << "showParams\n" 
+                 << "\tprint the values of the model parameters\n\n";
+            cout << "optRegularize ratio num start end tol\n"
+                 << "\tFinds the optimal regularization parameter by a line\n"
+                 << "\tsearch\n\n";
         }
         else
         {
