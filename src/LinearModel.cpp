@@ -52,6 +52,14 @@ double errorFunc(const gsl_vector * x, void * params)
 
     error /= numEntries;
 
+    // Add in the terms for the regularization
+    const double * xVec = gsl_vector_const_ptr(x, 0);
+
+    int length = (mat.numU + mat.numV) * numFactors;
+
+    for (int i = 0; i < length; i++)
+        error += xVec[i] * xVec[i] * regularize;
+
     return error;
 }
 
@@ -107,7 +115,15 @@ void gradientFunc(const gsl_vector * x, void * params, gsl_vector * g)
 
     // Average out all the gradient terms
     gsl_vector_scale(g, 1.0 / numEntries);
-     
+    
+    // Add in the gradient terms for the regularization
+    const double * xVec = gsl_vector_const_ptr(x, 0);
+    double * gVec = gsl_vector_ptr(g, 0);
+
+    int length = (mat.numU + mat.numV) * numFactors;
+
+    for (int i = 0; i < length; i++)
+        gVec[i] += 2 * xVec[i] * regularize;
 } 
 
 void errorAndGrad(const gsl_vector * x, void * params, double * f,
@@ -163,11 +179,24 @@ void errorAndGrad(const gsl_vector * x, void * params, double * f,
     }
 
     error /= numEntries;
-    *f = error;
 
     // Average out all the gradient terms
     gsl_vector_scale(g, 1.0 / numEntries);
      
+
+    // Put in all the terms due to regularization
+    const double * xVec = gsl_vector_const_ptr(x, 0);
+    double * gVec = gsl_vector_ptr(g, 0);
+
+    int length = (mat.numU + mat.numV) * numFactors;
+
+    for (int i = 0; i < length; i++)
+    {
+        error += xVec[i] * xVec[i] * regularize;
+        gVec[i] += 2 * xVec[i] * regularize;
+    }
+
+    *f = error;
 }
 
 //////////////////////////////////////////////////////////////////////////
