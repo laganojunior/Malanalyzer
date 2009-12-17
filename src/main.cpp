@@ -102,6 +102,12 @@ int main()
         } 
         else if (parts[0] == "trainCross")
         {
+            if (parts.size() < 3)
+            {
+                cout << "Expected 2 arguments. See help\n";
+                continue;
+            }
+
             double ratio = atof(parts[1].c_str());
             int numTries = atoi(parts[2].c_str());
                 
@@ -112,12 +118,33 @@ int main()
         } 
         else if (parts[0] == "recommend")
         {
+            if (parts.size() < 3)
+            {
+                cout << "Expected 2 arguments. See help\n";
+                continue;
+            }
             
             string name = parts[1];
             int num = atoi(parts[2].c_str());            
    
             printRecommendations(model, db, name, num);
         } 
+        else if (parts[0] == "help")
+        {
+            cout << "Commands Summary\n";
+            cout << "quit - quit the program\n";
+            cout << "help - prints this help statement\n";
+            cout << "trainFull - train on the full matrix\n";
+            cout << "trainCross ratio num - run cross validation tests \n"
+                 << "                       and print the test RMSE. Does\n"
+                 << "                       not modify the current model\n";
+            cout << "recommend username num - print the highest recommended\n"
+                 << "                         anime for some user\n";
+        }
+        else
+        {
+            cout << "Unrecognized command. See help\n";
+        }
     } 
     return 0;
 }
