@@ -102,6 +102,7 @@ int main()
         else if (parts[0] == "trainFull")
         {
             trainFull(model, fullMatrix);
+            cout << "RMSE is " << model.RMSE(fullMatrix) << endl;
         } 
         else if (parts[0] == "trainCross")
         {
