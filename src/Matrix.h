@@ -29,6 +29,8 @@ class Matrix
 
     void clear();
     void randomSplit(double p, Matrix& mat1, Matrix& mat2);
+    double getAvg();
+    void addConstant(double c);
     
     vector<vector <double> > mat;
     vector<vector <unsigned int> > uToV;

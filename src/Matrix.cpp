@@ -59,3 +59,33 @@ void Matrix :: randomSplit(double p, Matrix& mat1, Matrix& mat2)
         }
     }
 }
+
+
+double Matrix :: getAvg()
+{
+    double sum = 0;
+    int numElements = 0;
+
+    for (int i = 0; i < mat.size(); i++)
+    {
+        for (int j = 0; j < mat[i].size(); j++)
+        {
+            sum += mat[i][j];
+            numElements += 1;
+        }
+    }
+
+    return sum / numElements;
+}
+
+void Matrix :: addConstant(double c)
+{
+    for (int i = 0; i < mat.size(); i++)
+    {
+        for (int j = 0; j < mat[i].size(); j++)
+        {
+            mat[i][j] += c;
+        }
+    }
+}
+

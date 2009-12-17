@@ -60,9 +60,6 @@ double errorFunc(const gsl_vector * x, void * params)
 
     for (int i = 0; i < length; i++)
     {
-        if (i % numFactors == 0)
-            continue; 
-
         error += xVec[i] * xVec[i] * regularize;
     }
 
@@ -135,9 +132,6 @@ void gradientFunc(const gsl_vector * x, void * params, gsl_vector * g)
 
     for (int i = 0; i < length; i++)
     {
-        if (i % numFactors == 0)
-            continue;
-
         gVec[i] += 2 * xVec[i] * regularize;
     }
 } 
@@ -212,8 +206,6 @@ void errorAndGrad(const gsl_vector * x, void * params, double * f,
 
     for (int i = 0; i < length; i++)
     {
-        if (i % numFactors == 0)
-            continue;
         error += xVec[i] * xVec[i] * regularize;
         gVec[i] += 2 * xVec[i] * regularize;
     }
@@ -243,11 +235,18 @@ void LinearModel :: setRegularizationParameter(double regularize)
 
 void LinearModel :: train(const Matrix& trainingM)
 {
+    // Normalize the training matrix about its average value
+    // to get the desired noise.
+    Matrix mat = trainingM;
+
+    globalAvg = mat.getAvg();
+    mat.addConstant(-globalAvg);
+
     // Initialize parameters
     Parameters p;
     p.regularize = regularize;
     p.numFactors = numFactors;
-    p.mat = trainingM;
+    p.mat = mat;
 
     // Initialize the initial point randomly in -1 to 1
     gsl_vector * x = gsl_vector_alloc((trainingM.numU + trainingM.numV) 
@@ -333,8 +332,8 @@ void LinearModel :: train(const Matrix& trainingM)
 
 double LinearModel :: predict(unsigned int u, unsigned int v)
 {
-    double score = 0;
-    score += uVecs[u][0] + vVecs[v][0];
+    double score = globalAvg;
+    score += (uVecs[u][0] + vVecs[v][0]) *.5;
 
     for (int k = 1; k < numFactors; k++)
         score += uVecs[u][k] * vVecs[v][k];

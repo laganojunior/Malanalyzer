@@ -30,6 +30,7 @@ class LinearModel: public PredictionModel
 
     vector<vector<double> > uVecs;
     vector<vector<double> > vVecs;
+    double globalAvg;
 };
 
 #endif
