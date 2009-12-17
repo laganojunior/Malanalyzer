@@ -41,7 +41,8 @@ double errorFunc(const gsl_vector * x, void * params)
 
             double predict = 0;
 
-            for (int k = 0; k < numFactors; k++)
+            predict += uVec[0] + vVec[0];
+            for (int k = 1; k < numFactors; k++)
                 predict += uVec[k] * vVec[k];
 
             double diff = predict - actual;
@@ -58,7 +59,12 @@ double errorFunc(const gsl_vector * x, void * params)
     int length = (mat.numU + mat.numV) * numFactors;
 
     for (int i = 0; i < length; i++)
+    {
+        if (i % numFactors == 0)
+            continue; 
+
         error += xVec[i] * xVec[i] * regularize;
+    }
 
     return error;
 }
@@ -90,7 +96,9 @@ void gradientFunc(const gsl_vector * x, void * params, gsl_vector * g)
 
             double predict = 0;
 
-            for (int k = 0; k < numFactors; k++)
+            predict += uVec[0] + vVec[0];
+
+            for (int k = 1; k < numFactors; k++)
                 predict += uVec[k] * vVec[k];
 
             double diff = predict - actual;
@@ -105,7 +113,10 @@ void gradientFunc(const gsl_vector * x, void * params, gsl_vector * g)
             double * uGrad = gsl_vector_ptr(g, uVecI);
             double * vGrad = gsl_vector_ptr(g, vVecI);
 
-            for (int k = 0; k < numFactors; k++)
+            uGrad[0] += diff2;
+            vGrad[0] += diff2;
+
+            for (int k = 1; k < numFactors; k++)
             {
                 uGrad[k] += diff2 * vVec[k];
                 vGrad[k] += diff2 * uVec[k];
@@ -123,7 +134,12 @@ void gradientFunc(const gsl_vector * x, void * params, gsl_vector * g)
     int length = (mat.numU + mat.numV) * numFactors;
 
     for (int i = 0; i < length; i++)
+    {
+        if (i % numFactors == 0)
+            continue;
+
         gVec[i] += 2 * xVec[i] * regularize;
+    }
 } 
 
 void errorAndGrad(const gsl_vector * x, void * params, double * f,
@@ -154,7 +170,8 @@ void errorAndGrad(const gsl_vector * x, void * params, double * f,
 
             double predict = 0;
 
-            for (int k = 0; k < numFactors; k++)
+            predict += uVec[0] + vVec[0];
+            for (int k = 1; k < numFactors; k++)
                 predict += uVec[k] * vVec[k];
 
             double diff = predict - actual;
@@ -170,7 +187,10 @@ void errorAndGrad(const gsl_vector * x, void * params, double * f,
             double * uGrad = gsl_vector_ptr(g, uVecI);
             double * vGrad = gsl_vector_ptr(g, vVecI);
 
-            for (int k = 0; k < numFactors; k++)
+            uGrad[0] += diff2;
+            vGrad[0] += diff2;
+
+            for (int k = 1; k < numFactors; k++)
             {
                 uGrad[k] += diff2 * vVec[k];
                 vGrad[k] += diff2 * uVec[k];
@@ -192,6 +212,8 @@ void errorAndGrad(const gsl_vector * x, void * params, double * f,
 
     for (int i = 0; i < length; i++)
     {
+        if (i % numFactors == 0)
+            continue;
         error += xVec[i] * xVec[i] * regularize;
         gVec[i] += 2 * xVec[i] * regularize;
     }
@@ -312,7 +334,9 @@ void LinearModel :: train(const Matrix& trainingM)
 double LinearModel :: predict(unsigned int u, unsigned int v)
 {
     double score = 0;
-    for (int k = 0; k < numFactors; k++)
+    score += uVecs[u][0] + vVecs[v][0];
+
+    for (int k = 1; k < numFactors; k++)
         score += uVecs[u][k] * vVecs[v][k];
 
     return score;
