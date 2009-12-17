@@ -77,14 +77,14 @@ double lineSearchRegularize(LinearModel model, Matrix& fullMatrix, double ratio,
 
         double currR = start + currStep * 2;
 
-        if (prevE < prevE2)
+        if (prevE <= prevE2)
         { 
             cout << "On " << start + currStep * 2<< endl;
             model.setRegularizationParameter(start + currStep * 2);
             currE = trainCrossValidate(model, fullMatrix, ratio, numTries);
             cout << "Error is " << currE << endl;
 
-            while ( (! (prevE2 >= prevE) && (prevE <= currE)) &&
+            while ( (! ((prevE2 >= prevE) && (prevE <= currE))) &&
                     currR < end)
             {
                 prevE2 = prevE;
