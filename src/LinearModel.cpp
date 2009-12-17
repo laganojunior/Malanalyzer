@@ -41,7 +41,7 @@ double errorFunc(const gsl_vector * x, void * params)
 
             double predict = 0;
 
-            predict += uVec[0] + vVec[0];
+            predict += (uVec[0] + vVec[0]) * .5;
             for (int k = 1; k < numFactors; k++)
                 predict += uVec[k] * vVec[k];
 
@@ -96,7 +96,7 @@ void gradientFunc(const gsl_vector * x, void * params, gsl_vector * g)
 
             double predict = 0;
 
-            predict += uVec[0] + vVec[0];
+            predict += (uVec[0] + vVec[0]) * .5;
 
             for (int k = 1; k < numFactors; k++)
                 predict += uVec[k] * vVec[k];
@@ -113,8 +113,8 @@ void gradientFunc(const gsl_vector * x, void * params, gsl_vector * g)
             double * uGrad = gsl_vector_ptr(g, uVecI);
             double * vGrad = gsl_vector_ptr(g, vVecI);
 
-            uGrad[0] += diff2;
-            vGrad[0] += diff2;
+            uGrad[0] += diff2 * .5;
+            vGrad[0] += diff2 * .5;
 
             for (int k = 1; k < numFactors; k++)
             {
@@ -170,7 +170,7 @@ void errorAndGrad(const gsl_vector * x, void * params, double * f,
 
             double predict = 0;
 
-            predict += uVec[0] + vVec[0];
+            predict += (uVec[0] + vVec[0]) * .5;
             for (int k = 1; k < numFactors; k++)
                 predict += uVec[k] * vVec[k];
 
@@ -187,8 +187,8 @@ void errorAndGrad(const gsl_vector * x, void * params, double * f,
             double * uGrad = gsl_vector_ptr(g, uVecI);
             double * vGrad = gsl_vector_ptr(g, vVecI);
 
-            uGrad[0] += diff2;
-            vGrad[0] += diff2;
+            uGrad[0] += diff2 * .5;
+            vGrad[0] += diff2 * .5;
 
             for (int k = 1; k < numFactors; k++)
             {
