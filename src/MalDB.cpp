@@ -96,22 +96,24 @@ MalDBReader :: ~MalDBReader()
 }
 
 
-unsigned int MalDBReader :: getUserId(const string& name)
+int MalDBReader :: getUserId(const string& name)
 {
 	int index = 0;
-	for (; usernames[index] != name && index < usernames.size(); index++);
+	for (; index < usernames.size() && usernames[index] != name; index++);
 
-	assert(index <= usernames.size());
+    if (index == usernames.size())
+        return -1;
 	
 	return index;
 }
 
-unsigned int MalDBReader :: getAnimeId(const string& name)
+int MalDBReader :: getAnimeId(const string& name)
 {
 	int index = 0;
-	for (; animenames[index] != name && index < animenames.size(); index++);
+	for (; index < animenames.size() && animenames[index] != name; index++);
 
-	assert(index <= animenames.size());
+    if (index == animenames.size())
+        return -1;
 	
 	return index;
 }

@@ -123,6 +123,12 @@ void printRecommendations(LinearModel& model, MalDBReader& db,
 
     int userId = db.getUserId(username);
 
+    if (userId == -1)
+    {
+        cout << "User " << username << " not found" << endl;
+        return;
+    }
+
     for (int i = 0; i < db.getNumAnime(); i++)
     {        
         animePredicts[i] = pair<double, int> (model.predict(userId, i), i);

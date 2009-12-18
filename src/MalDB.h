@@ -19,8 +19,8 @@ class MalDBReader
     MalDBReader(string filename);
 	~MalDBReader();
 
-    unsigned int getUserId(const string& name);
-    unsigned int getAnimeId(const string& name);
+    int getUserId(const string& name);
+    int getAnimeId(const string& name);
 
     unsigned int getNumUsers();
     unsigned int getNumAnime();
