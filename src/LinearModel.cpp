@@ -41,9 +41,7 @@ double errorFunc(const gsl_vector * x, void * params)
             const double * vVec = gsl_vector_const_ptr(x, vVecI); 
 
             double predict = 0;
-
-            predict += (uVec[0] + vVec[0]) * .5;
-            for (int k = 1; k < numFactors; k++)
+            for (int k = 0; k < numFactors; k++)
                 predict += uVec[k] * vVec[k];
 
             double diff = predict - actual;
@@ -93,10 +91,7 @@ void gradientFunc(const gsl_vector * x, void * params, gsl_vector * g)
             const double * vVec = gsl_vector_const_ptr(x, vVecI); 
 
             double predict = 0;
-
-            predict += (uVec[0] + vVec[0]) * .5;
-
-            for (int k = 1; k < numFactors; k++)
+            for (int k = 0; k < numFactors; k++)
                 predict += uVec[k] * vVec[k];
 
             double diff = predict - actual;
@@ -111,10 +106,7 @@ void gradientFunc(const gsl_vector * x, void * params, gsl_vector * g)
             double * uGrad = gsl_vector_ptr(g, uVecI);
             double * vGrad = gsl_vector_ptr(g, vVecI);
 
-            uGrad[0] += diff2 * .5;
-            vGrad[0] += diff2 * .5;
-
-            for (int k = 1; k < numFactors; k++)
+            for (int k = 0; k < numFactors; k++)
             {
                 uGrad[k] += diff2 * vVec[k];
                 vGrad[k] += diff2 * uVec[k];
@@ -164,9 +156,7 @@ void errorAndGrad(const gsl_vector * x, void * params, double * f,
             const double * vVec = gsl_vector_const_ptr(x, vVecI); 
 
             double predict = 0;
-
-            predict += (uVec[0] + vVec[0]) * .5;
-            for (int k = 1; k < numFactors; k++)
+            for (int k = 0; k < numFactors; k++)
                 predict += uVec[k] * vVec[k];
 
             double diff = predict - actual;
@@ -181,11 +171,7 @@ void errorAndGrad(const gsl_vector * x, void * params, double * f,
     
             double * uGrad = gsl_vector_ptr(g, uVecI);
             double * vGrad = gsl_vector_ptr(g, vVecI);
-
-            uGrad[0] += diff2 * .5;
-            vGrad[0] += diff2 * .5;
-
-            for (int k = 1; k < numFactors; k++)
+            for (int k = 0; k < numFactors; k++)
             {
                 uGrad[k] += diff2 * vVec[k];
                 vGrad[k] += diff2 * uVec[k];
@@ -337,9 +323,8 @@ void LinearModel :: train(const Matrix& trainingM)
 double LinearModel :: predict(unsigned int u, unsigned int v)
 {
     double score = globalAvg;
-    score += (uVecs[u][0] + vVecs[v][0]) *.5;
 
-    for (int k = 1; k < numFactors; k++)
+    for (int k = 0; k < numFactors; k++)
         score += uVecs[u][k] * vVecs[v][k];
 
     return score;
