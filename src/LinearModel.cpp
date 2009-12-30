@@ -224,14 +224,65 @@ void LinearModel :: setGradientTolerance(double gradTol)
     this -> gradTol = gradTol;
 }
 
-void LinearModel :: train(const Matrix& trainingM)
+void LinearModel :: normalizeMatrix(Matrix& mat)
 {
-    // Normalize the training matrix about its average value
-    // to get the desired noise.
-    Matrix mat = trainingM;
+    uBias.assign(mat.numU, 0.0);
+    vBias.assign(mat.numV, 0.0);
+        
+    // Constant value used to pull bias closer to 0 for rows or columns
+    // with few entries
+    const int AVG_REGULARIZE = 8;
 
     globalAvg = mat.getAvg();
-    mat.addConstant(-globalAvg);
+    vector<unsigned int> vCounts;
+    vCounts.assign(mat.numV, 0);
+
+    // Calculate row and column bias
+    for (int i = 0; i < mat.numU; i++)
+    {
+        double rowSum = 0;
+       
+        const int uNumV = mat.mat[i].size(); 
+        const vector<double>& ratingRow = mat.mat[i];
+        const vector<unsigned int>& uToVRow = mat.uToV[i];
+
+        for (int j = 0; j < uNumV; j++)
+        {
+            uBias[i] += ratingRow[j] - globalAvg;
+            vBias[uToVRow[j]] += ratingRow[j] - globalAvg;
+            vCounts[uToVRow[j]] ++;
+        }
+
+        uBias[i] /= (uNumV + AVG_REGULARIZE);
+    }
+
+    // Post process the column bias from the sums
+    for (int i = 0; i < mat.numV; i++)
+    {
+        vBias[i] /= (vCounts[i] + AVG_REGULARIZE);
+    }
+
+    // Subtract the global averages and biases from each rating
+    for (int i = 0; i < mat.numU; i++)
+    {
+        const int uNumV = mat.mat[i].size(); 
+        vector<double>& ratingRow = mat.mat[i];
+        const vector<unsigned int>& uToVRow = mat.uToV[i];
+
+        for (int j = 0; j < uNumV; j++)
+        {
+            ratingRow[j] -= globalAvg + uBias[i] + vBias[uToVRow[j]];
+        }
+    }
+}
+
+void LinearModel :: train(const Matrix& trainingM)
+{
+    // Normalize the training matrix about average values
+    // to get the desired noise.
+    Matrix mat = trainingM;
+ 
+    normalizeMatrix(mat);
 
     // Initialize parameters
     Parameters p;
@@ -322,7 +373,7 @@ void LinearModel :: train(const Matrix& trainingM)
 
 double LinearModel :: predict(unsigned int u, unsigned int v)
 {
-    double score = globalAvg;
+    double score = globalAvg + uBias[u] + vBias[v];
 
     for (int k = 0; k < numFactors; k++)
         score += uVecs[u][k] * vVecs[v][k];
@@ -337,9 +388,11 @@ void LinearModel :: save(ostream& out)
         << globalAvg << endl;
 
     out << uVecs.size() << endl;
-
+    
     for (int i = 0; i < uVecs.size(); i++)
     {
+        out << uBias[i] << " ";
+
         out << uVecs[i][0];
 
         for (int j = 1; j < numFactors; j++)
@@ -354,6 +407,8 @@ void LinearModel :: save(ostream& out)
      
     for (int i = 0; i < vVecs.size(); i++)
     {
+        out << vBias[i] << " ";
+
         out << vVecs[i][0];
 
         for (int j = 1; j < numFactors; j++)
@@ -377,9 +432,12 @@ void LinearModel :: load(istream& in)
     in >> numU;
 
     uVecs.resize(numU);
+    uBias.resize(numU);
 
     for (int i = 0; i < numU; i++)
     {
+        in >> uBias[i];
+
         uVecs[i].resize(numFactors);
         
         for (int j = 0; j < numFactors; j++)
@@ -393,8 +451,12 @@ void LinearModel :: load(istream& in)
     in >> numV;
 
     vVecs.resize(numV);
+    vBias.resize(numV);
+
     for (int i = 0; i < numV; i++)
     {
+        in >> vBias[i];
+
         vVecs[i].resize(numFactors);
 
         for (int j = 0; j < numFactors; j++)

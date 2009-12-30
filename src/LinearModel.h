@@ -28,6 +28,7 @@ class LinearModel: public PredictionModel
 
     void save(ostream& out);
     void load(istream& in);
+
  
     int numFactors;
     double regularize;
@@ -36,7 +37,11 @@ class LinearModel: public PredictionModel
     private:
     vector<vector<double> > uVecs;
     vector<vector<double> > vVecs;
+    vector<double> uBias;
+    vector<double> vBias;
     double globalAvg;
+
+    void normalizeMatrix(Matrix& mat);
 };
 
 #endif
