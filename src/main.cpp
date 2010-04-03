@@ -57,7 +57,9 @@ double trainCrossValidate(LinearModel model, Matrix& fullMatrix, double ratio,
 double lineSearchRegularize(LinearModel model, Matrix& fullMatrix, double ratio,
                             int numTries, double start, double end, double tol)
 {
-    double currStep = (end - start) / 10;
+    const unsigned int NUM_PERIODS = 10;
+
+    double currStep = (end - start) / NUM_PERIODS;
 
     while ((end - start) / 2 > tol)
     {
@@ -106,7 +108,7 @@ double lineSearchRegularize(LinearModel model, Matrix& fullMatrix, double ratio,
         // Make new window
         start = minR - currStep;
         end = minR + currStep;
-        currStep /= 10;
+        currStep = (end - start) / NUM_PERIODS;
     }
 
     // After the line search is done to some window, return the midpoint
