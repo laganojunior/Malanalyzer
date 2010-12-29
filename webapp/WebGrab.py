@@ -2,6 +2,9 @@ import urllib2
 from django.utils import simplejson as json
 import re
 
+class UnknownUser(Exception):
+    pass
+
 def getAnimeList(username):
     apiUrl = "http://mal-api.com/animelist/" + username
     f = urllib2.urlopen(apiUrl)
@@ -19,7 +22,7 @@ def getUserId(username):
     m = re.search(userIdRegEx, profileHtml)
     
     if m is None:
-        raise Exception("No RegEx match in getUserId for %s" % username)
+        raise UnknownUser("No RegEx match in getUserId for %s" % username)
         
     return int(m.group(1))
     

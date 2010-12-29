@@ -4,6 +4,7 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 from Extractor import Extractor
 from Index import Index
 from FillQueue import FillQueue
+from InsertUsername import InsertUsername
 
 # Profile mode. Can be "Print", "Log", or "None"
 PROFILE = "None"
@@ -12,6 +13,7 @@ def main():
     application = webapp.WSGIApplication(
                                      [('/extract', Extractor),
                                       ('/fillqueue', FillQueue),
+                                      ('/insertusername', InsertUsername),
                                       ('/', Index)],
                                      debug=True)
     run_wsgi_app(application)
@@ -38,3 +40,4 @@ if __name__ == "__main__":
         logging.info("Profile data:\n%s", stream.getvalue())
     else:
         main()
+
