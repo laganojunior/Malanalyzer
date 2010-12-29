@@ -26,4 +26,5 @@ class FillQueue(webapp.RequestHandler):
             insertList.append(queueEntry)
 
         db.put(insertList)
-        
+        logging.debug('Inserted %d' % len(insertList))
+        self.response.out.write('Inserted %d' % len(insertList))
