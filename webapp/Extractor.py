@@ -27,7 +27,7 @@ class Extractor(webapp.RequestHandler):
         user = self.getUserObject(userid, username)
 
         # Get the list of known ratings of this user
-        oldRatings = Rating.gql('WHERE user = :1', user)
+        query = Rating.gql('WHERE user = :1', user)
 
         # Go through each rating in the new list and create a map from
         # id to rating
@@ -42,37 +42,36 @@ class Extractor(webapp.RequestHandler):
                 nameMap[animeid]   = anime['title']
 
         # Go through each known rating
-        for rating in oldRatings:
+        ratings = []
+        for rating in query:
             animeid = rating.anime.animeid
 
             if animeid in ratingMap:
                 # Update to new score if there is one
                 rating.rating = ratingMap[animeid]
-                rating.put()
+                ratings.append(rating)
 
                 # Delete the entry from the map to avoid it being
                 # inserted later
                 del ratingMap[animeid]
+                del nameMap[animeid]
             else:
                 # Otherwise, delete the rating to reflect that it is now
                 # gone
                 rating.delete()
 
         # Now insert new ratings
-        for animeid in ratingMap:
-            animename = nameMap[animeid]
-            score = ratingMap[animeid]
-
-            # Get the anime object from the database
-            anime = self.getAnimeObject(animeid, animename)
-
+        animes = self.getAnimeObjects(nameMap)
+        for anime in animes:
             # Generate the rating object
             rating = Rating()
             rating.user = user
             rating.anime = anime
-            rating.rating = score
-            
-            rating.put()
+            rating.rating = ratingMap[anime.animeid]
+            ratings.append(rating)
+
+        # Batch update the ratings
+        db.put(ratings)
 
     def getUserObject(self, userid, username):
         # Check if the user is already in the database
@@ -88,19 +87,38 @@ class Extractor(webapp.RequestHandler):
         else:
             return res[0]
 
-    def getAnimeObject(self, animeid, animename):
-        # Check if the anime is already in the database
-        query = Anime.gql('WHERE animeid = :1', animeid)
-        res = query.fetch(1)
+    def getAnimeObjects(self, namemap):
+        ids   = namemap.keys()
+        idSet = set(ids)
 
-        if res == []:
+        # Get the list of existing objects from the database, batching
+        # the maximum at a time
+        MAX_PER_BATCH = 30
+        objs = []
+        print "Got to", len(ids)
+        for i in range(len(ids) / MAX_PER_BATCH + 1):
+            if i * MAX_PER_BATCH >= len(ids):
+                break
+
+            query = Anime.gql('WHERE animeid IN :1', ids[i*MAX_PER_BATCH:
+                                                         (i+1)*MAX_PER_BATCH])
+
+            for anime in query:
+                objs.append(anime)
+                idSet.remove(anime.animeid)
+
+        # Insert new objects for those not found
+        newAnimes = []
+        for animeid in idSet:
             anime = Anime()
-            anime.name = animename
             anime.animeid = animeid
-            anime.put()
-            return anime
-        else:
-            return res[0]
+            anime.name = namemap[animeid]
+            objs.append(anime)
+            newAnimes.append(anime)
+
+        db.put(newAnimes)
+
+        return objs 
 
     def getNextUser(self):
         query = QueueUser.gql('ORDER BY date')
