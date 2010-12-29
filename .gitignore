@@ -1,0 +1,11 @@
+# Ignore temporaries
+*.swp
+
+# Ignore generated files
+*.pyc
+Makefile
+LinearModel
+obj/*
+
+# Ignore dataset
+Mal.db
