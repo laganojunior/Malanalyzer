@@ -95,7 +95,6 @@ class Extractor(webapp.RequestHandler):
         # the maximum at a time
         MAX_PER_BATCH = 30
         objs = []
-        print "Got to", len(ids)
         for i in range(len(ids) / MAX_PER_BATCH + 1):
             if i * MAX_PER_BATCH >= len(ids):
                 break
