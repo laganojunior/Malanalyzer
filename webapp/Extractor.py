@@ -109,4 +109,6 @@ class Extractor(webapp.RequestHandler):
         if res == []:
             return None
         else:
-            return res[0].username
+            username = res[0].username
+            res[0].delete()
+            return username
