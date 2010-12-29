@@ -3,13 +3,19 @@ from google.appengine.ext import webapp
 import WebGrab
 from Entities import *
 
+import logging
+
 class Extractor(webapp.RequestHandler):
     def get(self):
         self.response.headers['Content-Type'] = 'text/plain'
 
-        # Get a username that is recently online
-        usernameList = WebGrab.getRecentOnlineUsernames()
-        username = unicode(usernameList[0])
+        # Get the next username on the list
+        username = self.getNextUser()
+
+        if username == None:
+            logging.debug('None in queue, inserting more')
+            self.redirect('/fillqueue')
+            return
 
         self.response.out.write('Getting %s' % username)
 
@@ -96,4 +102,11 @@ class Extractor(webapp.RequestHandler):
         else:
             return res[0]
 
+    def getNextUser(self):
+        query = QueueUser.gql('ORDER BY date')
+        res = query.fetch(1)
 
+        if res == []:
+            return None
+        else:
+            return res[0].username
