@@ -7,7 +7,7 @@ import logging
 
 class Extractor(webapp.RequestHandler):
     def get(self):
-        self.response.headers['Content-Type'] = 'text/plain'
+        self.response.headers['Content-Type'] = 'text/html'
 
         # Get the next username on the list
         username = self.getNextUser()
