@@ -1,0 +1,4 @@
+cron:
+- description: get more users
+  url: /extract
+  schedule: every 1 minutes
