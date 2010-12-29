@@ -16,6 +16,7 @@ class FillQueue(webapp.RequestHandler):
         usernamelist = WebGrab.getRecentOnlineUsernames()
 
         if usernamelist == []:
+            self.response.out.write('Webgrab got 0 results')
             logging.debug('Webgrab got 0 results')            
 
         insertList = []

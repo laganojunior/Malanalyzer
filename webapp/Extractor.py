@@ -13,11 +13,11 @@ class Extractor(webapp.RequestHandler):
         username = self.getNextUser()
 
         if username == None:
-            logging.debug('None in queue, inserting more')
-            self.redirect('/fillqueue')
+            logging.debug('None in queue')
             return
 
         self.response.out.write('Getting %s' % username)
+        logging.debug('Getting %s' % username)
 
         # Get the users animelist and id
         animelist = WebGrab.getAnimeList(username)
