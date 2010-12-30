@@ -9,6 +9,6 @@ class Index(webapp.RequestHandler):
                                          method='post'""")
         self.response.out.write("Enter Username:")
         self.response.out.write("<input type='text' name='username'")
-        self.response.out.write("<input type='submit'")
+        self.response.out.write("<input type='submit'>")
 
         self.response.out.write("</form></body></html>\n")
