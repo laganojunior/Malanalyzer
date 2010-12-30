@@ -1,11 +1,9 @@
 from google.appengine.ext import db
 
 class User(db.Model):
-    userid = db.IntegerProperty()
     name = db.StringProperty(indexed=False)
 
 class Anime(db.Model):
-    animeid = db.IntegerProperty()
     name = db.StringProperty(indexed=False)
 
 class Rating(db.Model):

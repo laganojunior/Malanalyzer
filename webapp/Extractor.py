@@ -23,12 +23,6 @@ class Extractor(webapp.RequestHandler):
         animelist = WebGrab.getAnimeList(username)
         userid = WebGrab.getUserId(username)
 
-        # Get the user object
-        user = self.getUserObject(userid, username)
-
-        # Get the list of known ratings of this user
-        query = Rating.gql('WHERE user = :1', user)
-
         # Go through each rating in the new list and create a map from
         # id to rating
         ratingMap = {}
@@ -36,88 +30,46 @@ class Extractor(webapp.RequestHandler):
         for anime in animelist:
             animeid   = anime['id']
             rating    = anime['score']
-            
+
             if rating != 0:
-                ratingMap[animeid] = rating
+                ratingMap[str(animeid)] = rating
                 nameMap[animeid]   = anime['title']
 
-        # Go through each known rating
-        ratings = []
-        for rating in query:
-            animeid = rating.anime.animeid
-
-            if animeid in ratingMap:
-                # Update to new score if there is one
-                rating.rating = ratingMap[animeid]
-                ratings.append(rating)
-
-                # Delete the entry from the map to avoid it being
-                # inserted later
-                del ratingMap[animeid]
-                del nameMap[animeid]
-            else:
-                # Otherwise, delete the rating to reflect that it is now
-                # gone
-                rating.delete()
+        # Insert the user and anime objects for the ratings to reference
+        user = self.getUserObject(userid, username)
+        animes = self.getAnimeObjects(nameMap)
+        db.put(animes + [user])
 
         # Now insert new ratings
-        animes = self.getAnimeObjects(nameMap)
-        for anime in animes:
+        ratings = [0] * len(ratingMap)
+
+        for i, anime in enumerate(animes):
             # Generate the rating object
-            rating = Rating()
+            keyname = anime.key().name()
+            rating = Rating(key_name=str(user) + keyname)
             rating.user = user
             rating.anime = anime
-            rating.rating = ratingMap[anime.animeid]
-            ratings.append(rating)
+            rating.rating = ratingMap[keyname]
+            ratings[i] = rating
 
         # Batch update the ratings
         db.put(ratings)
 
     def getUserObject(self, userid, username):
         # Check if the user is already in the database
-        query = User.gql('WHERE userid = :1', userid)
-        res = query.fetch(1)
-
-        if res == []:
-            user = User()
-            user.name = username
-            user.userid = userid
-            user.put()
-            return user
-        else:
-            return res[0]
-
+        user = User(key_name=str(userid))
+        user.name = username
+        return user
+            
     def getAnimeObjects(self, namemap):
-        ids   = namemap.keys()
-        idSet = set(ids)
+        animes = [0] * len(namemap)
 
-        # Get the list of existing objects from the database, batching
-        # the maximum at a time
-        MAX_PER_BATCH = 30
-        objs = []
-        for i in range(len(ids) / MAX_PER_BATCH + 1):
-            if i * MAX_PER_BATCH >= len(ids):
-                break
-
-            query = Anime.gql('WHERE animeid IN :1', ids[i*MAX_PER_BATCH:
-                                                         (i+1)*MAX_PER_BATCH])
-
-            for anime in query:
-                objs.append(anime)
-                idSet.remove(anime.animeid)
-
-        # Insert new objects for those not found
-        newAnimes = []
-        for animeid in idSet:
-            anime = Anime()
-            anime.animeid = animeid
+        for i, animeid in enumerate(namemap):
+            anime = Anime(key_name=str(animeid))
             anime.name = namemap[animeid]
-            objs.append(anime)
-            newAnimes.append(anime)
+            animes[i] = anime
 
-        db.put(newAnimes)
-
-        return objs 
+        return animes 
 
     def getNextUser(self):
         query = QueueUser.gql('ORDER BY date')
