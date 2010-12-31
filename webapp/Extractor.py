@@ -14,6 +14,7 @@ class Extractor(webapp.RequestHandler):
 
         if username == None:
             logging.debug('None in queue')
+            self.redirect('/fillqueue')
             return
 
         self.response.out.write('Getting %s' % username)

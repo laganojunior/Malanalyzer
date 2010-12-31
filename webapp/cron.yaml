@@ -1,7 +1,4 @@
 cron:
 - description: get more users
   url: /extract
-  schedule: every 1 minutes
-- description: fill the queue
-  url: /fillqueue
-  schedule: every 20 minutes
+  schedule: every 5 minutes
