@@ -1,4 +1,4 @@
 cron:
 - description: get more users
   url: /extract
-  schedule: every 5 minutes
+  schedule: every 1 minutes
