@@ -33,43 +33,58 @@ class Extractor(webapp.RequestHandler):
 
             if rating != 0:
                 ratingMap[str(animeid)] = rating
-                nameMap[animeid]   = anime['title']
+                nameMap[str(animeid)]   = anime['title']
 
-        # Insert the user and anime objects for the ratings to reference
-        user = self.getUserObject(userid, username)
-        animes = self.getAnimeObjects(nameMap)
-        db.put(animes + [user])
+        # Insert the user and anime objects if needed
+        user   = self.getNewUserObject(userid, username)
+        animes = self.getNewAnimeObjects(nameMap)
+
+        if user:
+            newInsert = animes + [user]
+        else:
+            newInsert = animes
 
         # Now insert new ratings
         ratings = [0] * len(ratingMap)
 
-        for i, anime in enumerate(animes):
+        for i, animeid in enumerate(nameMap):
             # Generate the rating object
-            keyname = anime.key().name()
-            rating = Rating(key_name=str(user) + keyname)
-            rating.user = user
-            rating.anime = anime
-            rating.rating = ratingMap[keyname]
+            rating = Rating(key_name=str(userid) + "_" + animeid)
+            rating.userid = userid
+            rating.animeid = int(animeid)
+            rating.rating = ratingMap[animeid]
             ratings[i] = rating
 
-        # Batch update the ratings
-        db.put(ratings)
+        # Batch update everything
+        db.put(ratings + newInsert)
 
-    def getUserObject(self, userid, username):
+    def getNewUserObject(self, userid, username):
         # Check if the user is already in the database
-        user = User(key_name=str(userid))
-        user.name = username
+        user = User.get_by_key_name(str(userid))
+
+        if not user:
+            user = User(key_name=str(userid))
+            user.name = username
+            user.userid = userid
+            return user
+        else:
+            return None
+
         return user
-            
-    def getAnimeObjects(self, namemap):
-        animes = [0] * len(namemap)
 
-        for i, animeid in enumerate(namemap):
-            anime = Anime(key_name=str(animeid))
-            anime.name = namemap[animeid]
-            animes[i] = anime
+    def getNewAnimeObjects(self, namemap):
+        ids = namemap.keys()
+        animes = Anime.get_by_key_name(ids)
 
-        return animes 
+        # Fill in the ones that have not been inserted yet
+        newAnime = []
+        for i, anime in enumerate(animes):
+            if anime is None:
+                anime = Anime(key_name = ids[i])
+                anime.name = namemap[ids[i]]
+                newAnime.append(anime) 
+
+        return newAnime
 
     def getNextUser(self):
         query = QueueUser.gql('ORDER BY date')

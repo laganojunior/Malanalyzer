@@ -7,8 +7,8 @@ class Anime(db.Model):
     name = db.StringProperty(indexed=False)
 
 class Rating(db.Model):
-    user = db.ReferenceProperty(User)
-    anime = db.ReferenceProperty(Anime)
+    userid = db.IntegerProperty()
+    animeid = db.IntegerProperty()
     rating = db.IntegerProperty(indexed=False)
 
 class QueueUser(db.Model):
