@@ -19,6 +19,7 @@ class FillQueue(webapp.RequestHandler):
         # Request another filling in 20 minutes
         taskqueue.add(url='/fillqueue',
                       name='fillqueue-request-%s' % int(time.time()),
+                      method='get',
                       countdown = 20 * 60)
 
     def post(self):
