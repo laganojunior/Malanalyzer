@@ -5,6 +5,7 @@ from Extractor import Extractor
 from Index import Index
 from FillQueue import FillQueue
 from InsertUsername import InsertUsername
+from DumpTopics import DumpTopics
 
 # Profile mode. Can be "Print", "Log", or "None"
 PROFILE = "None"
@@ -14,7 +15,8 @@ def main():
                                      [('/extract', Extractor),
                                       ('/fillqueue', FillQueue),
                                       ('/insertusername', InsertUsername),
-                                      ('/', Index)],
+                                      ('/', Index),
+                                      ('/dumptopics', DumpTopics)],
                                      debug=True)
     run_wsgi_app(application)
 
