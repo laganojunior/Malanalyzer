@@ -1,4 +1,5 @@
 from google.appengine.ext import webapp
+from google.appengine.api import taskqueue
 
 import WebGrab
 import urllib2
@@ -14,13 +15,6 @@ class InsertUsername(webapp.RequestHandler):
         username = self.request.get('username')
 
         logging.debug('Got request to queue %s' % cgi.escape(username))
-        # Check if the user is already in the queue
-        query = QueueUser.gql('WHERE username=:1', username)
-        res = query.fetch(1)
-        if res != []:
-            self.response.out.write('%s already queued' %
-                                     cgi.escape(username))
-            return
 
         # Verify the user profile is real
         try:
@@ -34,9 +28,6 @@ class InsertUsername(webapp.RequestHandler):
                                      cgi.escape(username))
             return
 
-        queueEntry = QueueUser()
-        queueEntry.username = username
-        queueEntry.put()
-
-        self.response.out.write('Successfully queued %s' %
-                                 cgi.escape(username))
+        # Enter the user into the taskqueue
+        taskqueue.add(url='/extract', params={'username' : username},
+                      name="user_extract-%s" % username)
