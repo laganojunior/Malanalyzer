@@ -6,7 +6,7 @@ class Index(webapp.RequestHandler):
 
         self.response.out.write("<html><body>\n")
         self.response.out.write("""<form action='/insertusername'
-                                         method='post'""")
+                                         method='post'>""")
         self.response.out.write("Enter Username:")
         self.response.out.write("<input type='text' name='username'")
         self.response.out.write("<input type='submit'>")
