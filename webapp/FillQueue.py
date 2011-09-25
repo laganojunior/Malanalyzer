@@ -9,6 +9,12 @@ class FillQueue(webapp.RequestHandler):
 
     def get(self):
         self.response.headers['Content-Type'] = 'text/plain'
+        self.response.out.write("Sent fill request")
+
+        taskqueue.add(url='/fillqueue', name='fillqueue')
+
+    def post(self):
+        self.response.headers['Content-Type'] = 'text/plain'
 
         # Fill the queue with most recent online users
         # Get the next username on the list
@@ -18,16 +24,17 @@ class FillQueue(webapp.RequestHandler):
             self.response.out.write('Webgrab got 0 results<br>')
             logging.debug('Webgrab got 0 results')
 
-        # Create task queue items for each user
-        for username in usernamelist:
+        # Create task queue items for each user, with appropriate delays
+        # of 1 minute in between
+        for i, username in enumerate(usernamelist):
             taskqueue.add(url='/extract',
                           params={'username' : username},
                           name="user_extract-%s" % username,
-                          queue_name="user-extract")
+                          queue_name="user-extract",
+                          countdown = i * 60)
 
-        # Create another request to refill the queue in 1 second
-        taskqueue.add(url='/fillqueue', name='fillqueue',
-                      countdown = 20)
-
-    def post(self):
-        self.get()
+        # Create another request to refill the queue in 20 minutes
+        taskqueue.add(url='/fillqueue',
+                      method="get",
+                      name='fillqueue_request',
+                      countdown = 20 * 60)
