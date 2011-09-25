@@ -35,6 +35,7 @@ class Extractor(webapp.RequestHandler):
         nameMap   = {}
         ratingSum = 0.0
         ratingSumSquares = 0.0
+        trueCount = 0
         for anime in animelist:
             animeid   = anime['id']
             rating    = anime['score']
@@ -44,8 +45,14 @@ class Extractor(webapp.RequestHandler):
 
             nameMap[str(animeid)]   = anime['title']
 
-        mean = ratingSum / len(animelist)
-        stddev = math.sqrt((ratingSumSquares / len(animelist)) - mean * mean)
+            if rating != 0:
+                trueCount += 1
+ 
+        mean = ratingSum / trueCount
+        stddev = math.sqrt((ratingSumSquares / trueCount) - mean * mean)
+
+        logging.error("Mean is %f" % mean)
+        logging.error("Std. dev is %f" % stddev)
 
         # Normalize all ratings
         if stddev < 0.1:
@@ -62,6 +69,8 @@ class Extractor(webapp.RequestHandler):
                     ratingMap[animeid] = 1.0
                 else:
                     ratingMap[animeid] = 2.0 * math.exp((rating - mean) / stddev)
+
+        logging.error("Rating map is %s" % ratingMap)
 
         # Get anime objects, creating new ones if necessary
         animes = self.getAnimeObjects(nameMap)
