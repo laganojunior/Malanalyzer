@@ -29,5 +29,7 @@ class InsertUsername(webapp.RequestHandler):
             return
 
         # Enter the user into the taskqueue
-        taskqueue.add(url='/extract', params={'username' : username},
-                      name="user_extract-%s" % username)
+        taskqueue.add(url='/extract',
+                      params={'username' : username},
+                      name="user_extract-%s" % username,
+                      queue_name="user-extract")

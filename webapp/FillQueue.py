@@ -20,8 +20,10 @@ class FillQueue(webapp.RequestHandler):
 
         # Create task queue items for each user
         for username in usernamelist:
-            taskqueue.add(url='/extract', params={'username' : username},
-                          name="user_extract-%s" % username)
+            taskqueue.add(url='/extract',
+                          params={'username' : username},
+                          name="user_extract-%s" % username,
+                          queue_name="user-extract")
 
         # Create another request to refill the queue in 1 second
         taskqueue.add(url='/fillqueue', name='fillqueue',
