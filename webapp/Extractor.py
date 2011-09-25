@@ -44,7 +44,7 @@ class Extractor(webapp.RequestHandler):
 
             nameMap[str(animeid)]   = anime['title']
 
-        mean = rating / len(animelist)
+        mean = ratingSum / len(animelist)
         stddev = math.sqrt((ratingSumSquares / len(animelist)) - mean * mean)
 
         # Normalize all ratings
