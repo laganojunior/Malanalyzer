@@ -7,6 +7,7 @@ class DumpTopics(webapp.RequestHandler):
 
     def get(self):
         self.response.headers['Content-Type'] = 'text/html'
+        self.response.out.write('<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>')
 
         # Get all topics and anime
         topics = Topic.all()
