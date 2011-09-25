@@ -7,6 +7,7 @@ from Entities import *
 
 import logging
 import cgi
+import time
 
 class InsertUsername(webapp.RequestHandler):
     def post(self):
@@ -31,5 +32,5 @@ class InsertUsername(webapp.RequestHandler):
         # Enter the user into the taskqueue
         taskqueue.add(url='/extract',
                       params={'username' : username},
-                      name="user_extract-%s" % username,
+                      name="user_extract-%s-%s" % (username, int(time.time())),
                       queue_name="user-extract")
