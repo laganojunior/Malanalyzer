@@ -75,7 +75,7 @@ class Extractor(webapp.RequestHandler):
             topicMaps[i] = eval(str(topic.animes))
 
         # Get the topic weights for this user
-        topicWeights = [0.000001] * len(topics)
+        topicWeights = [0.0000001] * len(topics)
         for i, topic in enumerate(topics):
             for animeid in ratingMap:
                 if animeid in topicMaps[i]:
@@ -85,7 +85,8 @@ class Extractor(webapp.RequestHandler):
         # Smooth out the topics a bit and normalize
         topicWeightSum = sum(topicWeights)
         for i, weight in enumerate(topicWeights):
-            topicWeights[i] += random.uniform(0, .1 / topicWeightSum)
+            topicWeights[i] += random.uniform(0,
+                                             .1 / MAX_TOPICS * topicWeightSum)
 
         topicWeightSum = sum(topicWeights)
         for i, weight in enumerate(topicWeights):
