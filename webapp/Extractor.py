@@ -11,7 +11,7 @@ import math
 MAX_ANIMES_TO_USE = 500
 MAX_ANIMES_IN_NEW_TOPIC = 50
 
-LEARNING_RATE = .1
+LEARNING_RATE = .4
 
 class Extractor(webapp.RequestHandler):
     def post(self):
