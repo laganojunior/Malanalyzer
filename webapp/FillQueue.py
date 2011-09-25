@@ -1,9 +1,8 @@
 from google.appengine.ext import webapp
 from google.appengine.ext import db
+from google.appengine.api import taskqueue
 
 import WebGrab
-from Entities import *
-
 import logging
 
 class FillQueue(webapp.RequestHandler):
@@ -17,14 +16,16 @@ class FillQueue(webapp.RequestHandler):
 
         if usernamelist == []:
             self.response.out.write('Webgrab got 0 results<br>')
-            logging.debug('Webgrab got 0 results')            
+            logging.debug('Webgrab got 0 results')
 
-        insertList = []
+        # Create task queue items for each user
         for username in usernamelist:
-            queueEntry = QueueUser()
-            queueEntry.username = username
-            insertList.append(queueEntry)
+            taskqueue.add(url='/extract', params={'username' : username},
+                          name="user_extract-%s" % username)
 
-        db.put(insertList)
-        logging.debug('Inserted %d' % len(insertList))
-        self.response.out.write('Inserted %d' % len(insertList))
+        # Create another request to refill the queue in 1 second
+        taskqueue.add(url='/fillqueue', name='fillqueue',
+                      countdown = 20)
+
+    def post(self):
+        self.get()

@@ -6,16 +6,10 @@ from Entities import *
 import logging
 
 class Extractor(webapp.RequestHandler):
-    def get(self):
+    def post(self):
         self.response.headers['Content-Type'] = 'text/html'
 
-        # Get the next username on the list
-        username = self.getNextUser()
-
-        if username == None:
-            logging.debug('None in queue')
-            self.redirect('/fillqueue')
-            return
+        username = self.request.get('username')
 
         self.response.out.write('Getting %s' % username)
         logging.debug('Getting %s' % username)
@@ -86,14 +80,3 @@ class Extractor(webapp.RequestHandler):
                 newAnime.append(anime) 
 
         return newAnime
-
-    def getNextUser(self):
-        query = QueueUser.gql('ORDER BY date')
-        res = query.fetch(1)
-
-        if res == []:
-            return None
-        else:
-            username = res[0].username
-            res[0].delete()
-            return username
