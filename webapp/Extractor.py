@@ -51,9 +51,6 @@ class Extractor(webapp.RequestHandler):
         mean = ratingSum / trueCount
         stddev = math.sqrt((ratingSumSquares / trueCount) - mean * mean)
 
-        logging.error("Mean is %f" % mean)
-        logging.error("Std. dev is %f" % stddev)
-
         # Normalize all ratings
         if stddev < 0.1:
             # Standard deviation seems to indicate no variance, so set
@@ -69,8 +66,6 @@ class Extractor(webapp.RequestHandler):
                     ratingMap[animeid] = 1.0
                 else:
                     ratingMap[animeid] = 2.0 * math.exp((rating - mean) / stddev)
-
-        logging.error("Rating map is %s" % ratingMap)
 
         # Get anime objects, creating new ones if necessary
         animes = self.getAnimeObjects(nameMap)
