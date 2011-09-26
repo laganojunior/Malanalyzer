@@ -20,7 +20,7 @@ class DumpTopics(webapp.RequestHandler):
 
         # Now dump each topic by weight order
         for i, topic in enumerate(topics):
-            self.response.out.write("<h1>Topic %d:%f</h1>" % (i, topic.weight))
+            self.response.out.write("<h1>Topic %d</h1>" % i)
 
             topicMap = eval(str(topic.animes))
 
